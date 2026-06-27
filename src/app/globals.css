@@ -1,0 +1,1275 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 30 9% 5%;
+    --foreground: 40 18% 92%;
+
+    --card: 30 7% 8%;
+    --card-foreground: 40 16% 92%;
+
+    --popover: 30 8% 7%;
+    --popover-foreground: 40 16% 92%;
+
+    --primary: 40 64% 47%;
+    --primary-foreground: 30 12% 7%;
+
+    --secondary: 30 6% 14%;
+    --secondary-foreground: 40 14% 90%;
+
+    --muted: 30 6% 13%;
+    --muted-foreground: 40 8% 58%;
+
+    --accent: 40 64% 47%;
+    --accent-foreground: 30 12% 7%;
+
+    --destructive: 0 62% 46%;
+    --destructive-foreground: 0 0% 98%;
+
+    --success: 152 45% 42%;
+    --warning: 38 80% 52%;
+
+    --border: 32 7% 17%;
+    --input: 32 7% 17%;
+    --ring: 40 64% 47%;
+
+    --radius: 0.75rem;
+  }
+
+  /* ============ Public site light / cream theme ============
+     Scoped to the (site) layout so the admin panel keeps its dark tokens.
+     Every token-driven element (bg-background, text-foreground, bg-card,
+     border-border, text-muted-foreground, text-primary…) adapts automatically. */
+  .theme-cream {
+    --background: 40 36% 91%;
+    --foreground: 28 25% 15%;
+
+    --card: 40 44% 96%;
+    --card-foreground: 28 25% 15%;
+
+    --popover: 40 44% 97%;
+    --popover-foreground: 28 25% 15%;
+
+    --primary: 36 60% 41%;
+    --primary-foreground: 42 46% 97%;
+
+    --secondary: 38 28% 85%;
+    --secondary-foreground: 28 25% 18%;
+
+    --muted: 38 26% 86%;
+    --muted-foreground: 28 14% 34%;
+
+    --accent: 36 60% 41%;
+    --accent-foreground: 42 46% 97%;
+
+    --destructive: 0 62% 44%;
+    --destructive-foreground: 42 46% 97%;
+
+    --border: 34 22% 77%;
+    --input: 34 22% 77%;
+    --ring: 36 60% 41%;
+  }
+
+  /* Charcoal island inside the cream site (footer, dark bands) — restores the
+     dark tokens so token-driven text stays light. */
+  .theme-charcoal {
+    --background: 30 9% 5%;
+    --foreground: 40 18% 92%;
+    --card: 30 7% 8%;
+    --card-foreground: 40 16% 92%;
+    --popover: 30 8% 7%;
+    --popover-foreground: 40 16% 92%;
+    --primary: 40 64% 47%;
+    --primary-foreground: 30 12% 7%;
+    --secondary: 30 6% 14%;
+    --secondary-foreground: 40 14% 90%;
+    --muted: 30 6% 13%;
+    --muted-foreground: 40 10% 62%;
+    --accent: 40 64% 47%;
+    --accent-foreground: 30 12% 7%;
+    --border: 32 7% 17%;
+    --input: 32 7% 17%;
+    --ring: 40 64% 47%;
+    color: hsl(var(--foreground));
+  }
+
+  /* ============ Public site DARK theme ============
+     Activated by adding `.dark` to <html> (see ThemeProvider). Overrides the
+     cream tokens for the public (.theme-cream) subtree only — the admin panel
+     (:root) keeps its own dark tokens. Tuned for AA contrast: warm off-white
+     text on a deep charcoal, brighter gold accent. */
+  html.dark .theme-cream {
+    --background: 30 10% 7%;
+    --foreground: 40 20% 93%;
+    --card: 30 9% 11%;
+    --card-foreground: 40 18% 93%;
+    --popover: 30 9% 10%;
+    --popover-foreground: 40 18% 93%;
+    --primary: 40 66% 53%;
+    --primary-foreground: 30 14% 8%;
+    --secondary: 30 7% 16%;
+    --secondary-foreground: 40 16% 90%;
+    --muted: 30 7% 15%;
+    --muted-foreground: 40 12% 68%;
+    --accent: 40 66% 53%;
+    --accent-foreground: 30 14% 8%;
+    --destructive: 0 64% 52%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 32 8% 22%;
+    --input: 32 8% 22%;
+    --ring: 40 66% 53%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  html {
+    scroll-behavior: smooth;
+    /* Keep anchor targets clear of the fixed navbar. */
+    scroll-padding-top: 5rem;
+    -webkit-text-size-adjust: 100%;
+    /* Clip at the root so decorative pop-out elements (CardSwap, fanned cards)
+       never create a horizontal scrollbar. `clip` doesn't establish a scroll
+       container, so `position: sticky` keeps working. */
+    overflow-x: clip;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: "ss01", "cv01";
+    -webkit-font-smoothing: antialiased;
+    /* Safety net against accidental horizontal scroll on small screens. */
+    overflow-x: clip;
+    -webkit-tap-highlight-color: transparent;
+  }
+  ::selection {
+    @apply bg-primary/30 text-foreground;
+  }
+  h1, h2, h3, h4 {
+    @apply font-display tracking-tight;
+  }
+  /* Consistent, visible keyboard focus everywhere (mouse clicks stay clean). */
+  :focus-visible {
+    @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
+  }
+  /* Comfortable mobile tap targets for icon-only controls. */
+  @media (pointer: coarse) {
+    button,
+    a[role="button"],
+    [type="button"],
+    [type="submit"] {
+      min-height: 40px;
+    }
+  }
+}
+
+/* Smooth scroll-state cross-fade for the navbar's frosted bar. Driven by opacity
+   so the background, blur and border ease in instead of popping. Kept running
+   even under reduced-motion — it's a subtle, non-vestibular cross-fade the user
+   explicitly asked for. */
+.nav-scroll-layer {
+  transition: opacity 600ms cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: opacity;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nav-scroll-layer {
+    transition-duration: 600ms !important;
+  }
+  /* Keep the services display-cards' hover lift / un-grayscale smooth. */
+  .display-card,
+  .display-card::before {
+    transition-duration: 700ms !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@layer components {
+  /* Small uppercase label above section titles */
+  .eyebrow {
+    @apply inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.22em] text-primary;
+  }
+
+  /* Gradient gold text for emphasis (deep brass reads on both cream & charcoal) */
+  .text-gold-gradient {
+    @apply bg-gradient-to-br from-gold-500 via-gold-600 to-gold-800 bg-clip-text text-transparent;
+  }
+
+  /* Frosted glass surface */
+  .glass {
+    @apply border border-white/10 bg-white/[0.04] backdrop-blur-md;
+  }
+
+  /* Hairline divider with center fade */
+  .rule-fade {
+    @apply h-px w-full bg-gradient-to-r from-transparent via-border to-transparent;
+  }
+
+  /* Section vertical rhythm */
+  .section {
+    @apply py-20 md:py-28;
+  }
+
+  .section-tight {
+    @apply py-16 md:py-24;
+  }
+
+  .premium-card {
+    @apply relative overflow-hidden rounded-xl border border-border bg-card transition-[transform,border-color,box-shadow,background-color] duration-300 ease-out;
+    box-shadow: inset 0 1px 0 hsl(0 0% 100% / 0.035);
+  }
+
+  .premium-card::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 300ms ease;
+    background:
+      linear-gradient(135deg, hsl(var(--primary) / 0.12), transparent 34%),
+      radial-gradient(80% 80% at 100% 0%, hsl(var(--primary) / 0.12), transparent 52%);
+  }
+
+  .premium-card:hover {
+    transform: translateY(-5px);
+    border-color: hsl(var(--primary) / 0.42);
+    box-shadow: 0 24px 60px -28px hsl(0 0% 0% / 0.8), inset 0 1px 0 hsl(0 0% 100% / 0.05);
+  }
+
+  .premium-card:hover::before {
+    opacity: 1;
+  }
+
+  .premium-image {
+    @apply relative overflow-hidden bg-secondary;
+  }
+
+  .premium-image::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background:
+      linear-gradient(to top, hsl(var(--background) / 0.58), transparent 46%),
+      linear-gradient(115deg, transparent 0 42%, hsl(0 0% 100% / 0.18) 50%, transparent 58% 100%);
+    transform: translateX(-140%);
+    transition: transform 700ms ease, opacity 300ms ease;
+    opacity: 0.52;
+  }
+
+  .group:hover .premium-image::after {
+    transform: translateX(140%);
+  }
+
+  .luxury-surface {
+    @apply border border-border bg-card;
+    box-shadow: inset 0 1px 0 hsl(0 0% 100% / 0.035), 0 18px 52px -34px hsl(0 0% 0% / 0.75);
+  }
+
+  /* ============ Scissor navbar ============ */
+  /* Blade-shaped rail: pointed (tapered) left/right ends like a scissor blade,
+     carbon-fibre texture, gold hairline glow. */
+  .scissor-rail {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 0.1rem;
+    padding: 0.2rem 0.55rem;
+    border-radius: 9999px;
+    background:
+      linear-gradient(180deg, hsl(30 9% 14%), hsl(30 10% 7%)),
+      repeating-linear-gradient(45deg, hsl(0 0% 100% / 0.02) 0 2px, transparent 2px 5px);
+    box-shadow:
+      inset 0 1px 0 hsl(0 0% 100% / 0.07),
+      inset 0 0 0 1px hsl(var(--primary) / 0.24),
+      0 18px 48px -30px hsl(0 0% 0% / 0.9);
+  }
+  /* The scissor's left blade tips and right finger-ring handles. */
+  .scissor-end {
+    flex-shrink: 0;
+    color: hsl(var(--primary));
+  }
+
+  /* Links overlaid on the photographic scissors navbar (dark carbon scissors,
+     so the labels are light with a soft shadow for legibility, gold on hover). */
+  /* Blade / gap labels — gold so they read on both the black metal and the cream
+     gaps; the dark halo keeps them crisp wherever they land. */
+  .scissors-link {
+    white-space: nowrap;
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: hsl(40 85% 62%);
+    text-shadow: 0 1px 2px hsl(30 12% 4% / 0.95), 0 0 5px hsl(30 12% 4% / 0.8);
+    transition: color 200ms ease, transform 200ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .scissors-link:hover,
+  .scissors-link:focus-visible,
+  .scissors-link[data-active="true"] {
+    color: hsl(44 95% 72%);
+  }
+
+  /* "Service | Gallery" group sits on the left blade, tilted to follow it. */
+  .scissors-blade-group {
+    display: inline-flex;
+    align-items: center;
+    white-space: nowrap;
+    transform: translate(-50%, -50%) rotate(0deg);
+  }
+  .scissors-blade-group .scissors-link {
+  font-size: 0.60rem;
+  }
+  .scissors-sep {
+    margin: 0 0.5em;
+    font-weight: 400;
+    color: hsl(40 55% 55% / 0.6);
+    text-shadow: 0 1px 2px hsl(30 12% 4% / 0.9);
+  }
+
+  /* Home = the pivot screw: an invisible click target that keeps the screw clean,
+     with a subtle gold ring only on hover/focus for affordance. */
+  .scissors-home {
+    height: 20px;
+    width: 20px;
+    border-radius: 9999px;
+    transition: box-shadow 200ms ease, background-color 200ms ease;
+  }
+  .scissors-home:hover,
+  .scissors-home:focus-visible,
+  .scissors-home[data-active="true"]:hover {
+    background-color: hsl(40 80% 55% / 0.14);
+    box-shadow: 0 0 0 2px hsl(var(--primary) / 0.55);
+  }
+
+  /* Icon buttons nested inside the two finger-ring holes — gold, blended. */
+  .scissors-ring {
+    display: grid;
+    place-items: center;
+    height: 30px;
+    width: 30px;
+    border-radius: 9999px;
+    color: hsl(40 82% 58%);
+    filter: drop-shadow(0 1px 2px hsl(30 12% 4% / 0.7));
+    transition: color 200ms ease, transform 200ms cubic-bezier(0.22, 1, 0.36, 1),
+      background-color 200ms ease;
+  }
+  .scissors-ring:hover,
+  .scissors-ring:focus-visible,
+  .scissors-ring[data-active="true"] {
+    color: hsl(44 95% 70%);
+    background-color: hsl(40 80% 55% / 0.16);
+    transform: translate(-50%, -50%) scale(1.12);
+  }
+
+  /* Premium light sweep across filled buttons on hover */
+  .btn-sheen {
+    position: relative;
+    overflow: hidden;
+  }
+  .btn-sheen::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(115deg, transparent 0 38%, hsl(0 0% 100% / 0.3) 50%, transparent 62% 100%);
+    transform: translateX(-160%);
+    transition: transform 720ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .btn-sheen:hover::after {
+    transform: translateX(160%);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .btn-sheen::after {
+      display: none;
+    }
+  }
+
+  .scissor-link {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    overflow: hidden;
+    padding: 0.55rem 0.95rem;
+    font-size: 0.74rem;
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: hsl(40 20% 70%);
+    transition: color 220ms ease, transform 220ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .scissor-link:hover,
+  .scissor-link:focus-visible,
+  .scissor-link[data-active="true"] {
+    color: hsl(var(--primary));
+  }
+  .scissor-link:hover,
+  .scissor-link:focus-visible {
+    transform: translateY(-1px);
+  }
+  /* Gold underline animates in on hover/focus and stays for the active page. */
+  .scissor-link::after {
+    content: "";
+    position: absolute;
+    left: 0.9rem;
+    right: 0.9rem;
+    bottom: 0.34rem;
+    height: 2px;
+    border-radius: 2px;
+    background: linear-gradient(90deg, transparent, hsl(var(--primary)), transparent);
+    box-shadow: 0 0 12px hsl(var(--primary) / 0.7);
+    transform: scaleX(0);
+    transform-origin: center;
+    opacity: 0;
+    transition: transform 280ms cubic-bezier(0.22, 1, 0.36, 1), opacity 280ms ease;
+  }
+  .scissor-link:hover::after,
+  .scissor-link:focus-visible::after,
+  .scissor-link[data-active="true"]::after {
+    transform: scaleX(1);
+    opacity: 1;
+  }
+
+  /* Diagonal light sweep on hover (blade shine) */
+  .blade-shine::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(115deg, transparent 0 40%, hsl(0 0% 100% / 0.22) 50%, transparent 60% 100%);
+    transform: translateX(-150%);
+    transition: transform 650ms ease;
+  }
+  .blade-shine:hover::before {
+    transform: translateX(150%);
+  }
+
+  /* Finger-ring handle button (scissor handle) */
+  .handle-ring {
+    display: grid;
+    place-items: center;
+    height: 2.5rem;
+    width: 2.5rem;
+    border-radius: 9999px;
+    border: 1.5px solid hsl(var(--primary) / 0.45);
+    color: hsl(40 22% 78%);
+    background: radial-gradient(circle at 50% 28%, hsl(30 9% 15%), hsl(30 10% 8%));
+    transition: transform 240ms ease, border-color 240ms ease, color 240ms ease, box-shadow 240ms ease;
+  }
+  .handle-ring:hover {
+    transform: translateY(-1px);
+    color: hsl(var(--primary));
+    border-color: hsl(var(--primary) / 0.85);
+    box-shadow: 0 0 0 3px hsl(var(--primary) / 0.12), 0 10px 24px -14px hsl(var(--primary) / 0.8);
+  }
+
+  /* Scissor pivot screw with barber-pole shimmer */
+  .scissor-pivot {
+    position: relative;
+    height: 1.65rem;
+    width: 0.62rem;
+    border-radius: 9999px;
+    overflow: hidden;
+    box-shadow: 0 0 0 1px hsl(var(--primary) / 0.45), 0 0 14px -4px hsl(var(--primary) / 0.7);
+  }
+
+  /* ============ Luxury theme helpers ============ */
+  /* Parchment band: locally flip tokens to cream-with-charcoal-text so any
+     token-driven child (text-foreground, bg-card, border-border…) adapts. */
+  .parchment {
+    --background: 40 40% 93%;
+    --foreground: 28 28% 15%;
+    --card: 40 46% 97%;
+    --card-foreground: 28 28% 15%;
+    --popover: 40 46% 97%;
+    --popover-foreground: 28 28% 15%;
+    --secondary: 38 30% 88%;
+    --secondary-foreground: 28 28% 18%;
+    --muted: 38 28% 86%;
+    --muted-foreground: 30 14% 36%;
+    --border: 34 24% 78%;
+    --input: 34 24% 78%;
+    --primary-foreground: 40 46% 97%;
+    color: hsl(var(--foreground));
+    background:
+      radial-gradient(130% 120% at 50% -10%, hsl(40 46% 97%), hsl(40 32% 87%)),
+      repeating-linear-gradient(135deg, hsl(34 30% 82% / 0.45) 0 1px, transparent 1px 8px);
+  }
+
+  /* Dark-mode parchment: keep the band a touch lighter than the page with a
+     faint warm texture, so the "In Detail" section follows the dark theme. */
+  html.dark .parchment {
+    --background: 30 9% 9%;
+    --foreground: 40 18% 92%;
+    --card: 30 8% 12%;
+    --card-foreground: 40 16% 92%;
+    --popover: 30 8% 11%;
+    --popover-foreground: 40 16% 92%;
+    --secondary: 30 7% 16%;
+    --secondary-foreground: 40 14% 90%;
+    --muted: 30 7% 15%;
+    --muted-foreground: 40 10% 66%;
+    --border: 32 8% 22%;
+    --input: 32 8% 22%;
+    --primary-foreground: 30 14% 8%;
+    background:
+      radial-gradient(130% 120% at 50% -10%, hsl(30 9% 12%), hsl(30 10% 7%)),
+      repeating-linear-gradient(135deg, hsl(40 20% 80% / 0.04) 0 1px, transparent 1px 8px);
+  }
+
+  /* Gold-framed luxury card (cream menu card) */
+  .luxury-frame {
+    position: relative;
+    border: 1px solid hsl(var(--primary) / 0.5);
+    box-shadow:
+      inset 0 0 0 1px hsl(var(--primary) / 0.16),
+      inset 0 0 0 5px hsl(var(--card)),
+      0 16px 44px -30px hsl(0 0% 0% / 0.55);
+  }
+
+  /* Subtle tool-dot pattern background */
+  .tool-pattern {
+    background-image: radial-gradient(circle at 1px 1px, hsl(var(--primary) / 0.08) 1px, transparent 0);
+    background-size: 26px 26px;
+  }
+
+  /* FAQ accordion (native <details>) — custom marker, hover, and open reveal. */
+  .faq-disclosure {
+    transition: border-color 220ms ease, background-color 220ms ease;
+  }
+  .faq-disclosure > summary {
+    list-style: none;
+  }
+  .faq-disclosure > summary::-webkit-details-marker {
+    display: none;
+  }
+  .faq-disclosure:hover {
+    border-color: hsl(var(--primary) / 0.35);
+  }
+  .faq-disclosure[open] {
+    border-color: hsl(var(--primary) / 0.3);
+    background-color: hsl(var(--primary) / 0.04);
+  }
+  .faq-disclosure[open] .faq-chevron {
+    transform: rotate(180deg);
+  }
+  .faq-disclosure[open] > p {
+    animation: faq-reveal 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  /* Gentle reveal of the header on first paint */
+  .header-reveal {
+    animation: header-drop 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  @keyframes header-drop {
+    from { opacity: 0; transform: translateY(-14px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .hairline-glow {
+    @apply relative;
+  }
+
+  .hairline-glow::after {
+    content: "";
+    position: absolute;
+    inset-inline: 12%;
+    bottom: -1px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, hsl(var(--primary) / 0.55), transparent);
+  }
+
+  .reveal-motion {
+    opacity: 0;
+    transform: translateY(var(--reveal-y, 20px));
+    filter: blur(6px);
+    transition:
+      opacity 620ms cubic-bezier(0.22, 1, 0.36, 1),
+      transform 620ms cubic-bezier(0.22, 1, 0.36, 1),
+      filter 620ms cubic-bezier(0.22, 1, 0.36, 1);
+    transition-delay: var(--reveal-delay, 0s);
+    will-change: opacity, transform, filter;
+  }
+
+  .reveal-motion.is-visible {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
+
+  .stagger-item {
+    opacity: 0;
+    transform: translateY(18px) scale(0.985);
+    filter: blur(4px);
+    transition:
+      opacity 520ms cubic-bezier(0.22, 1, 0.36, 1),
+      transform 520ms cubic-bezier(0.22, 1, 0.36, 1),
+      filter 520ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .stagger-group.is-visible .stagger-item {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+
+  .stagger-group.is-visible .stagger-item:nth-child(2) { transition-delay: 55ms; }
+  .stagger-group.is-visible .stagger-item:nth-child(3) { transition-delay: 110ms; }
+  .stagger-group.is-visible .stagger-item:nth-child(4) { transition-delay: 165ms; }
+  .stagger-group.is-visible .stagger-item:nth-child(5) { transition-delay: 220ms; }
+  .stagger-group.is-visible .stagger-item:nth-child(6) { transition-delay: 275ms; }
+  .stagger-group.is-visible .stagger-item:nth-child(7) { transition-delay: 330ms; }
+  .stagger-group.is-visible .stagger-item:nth-child(8) { transition-delay: 385ms; }
+  .stagger-group.is-visible .stagger-item:nth-child(9) { transition-delay: 440ms; }
+
+  .animate-nav-underline {
+    animation: nav-underline 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .animate-mobile-menu {
+    animation: mobile-menu 220ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  /* Mobile menu overlay (portaled to <body>) — CSS-driven open/close so it is
+     guaranteed visible even when JS animation is unavailable (the global
+     reduced-motion rule collapses the duration to ~0, leaving the end state). */
+  .mobile-menu-panel[data-state="open"] {
+    animation: mobile-menu 240ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  .mobile-menu-panel[data-state="closing"] {
+    animation: mobile-menu-out 240ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .animate-menu-item {
+    animation: menu-item 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .animate-menu-item:nth-child(2) { animation-delay: 35ms; }
+  .animate-menu-item:nth-child(3) { animation-delay: 70ms; }
+  .animate-menu-item:nth-child(4) { animation-delay: 105ms; }
+  .animate-menu-item:nth-child(5) { animation-delay: 140ms; }
+  .animate-menu-item:nth-child(6) { animation-delay: 175ms; }
+  .animate-menu-item:nth-child(7) { animation-delay: 210ms; }
+
+  .hero-word {
+    opacity: 0;
+    transform: translateY(34px);
+    filter: blur(7px);
+    animation: hero-word 720ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .hero-backdrop {
+    animation: hero-backdrop 1400ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .soft-float {
+    animation: soft-float 3.2s ease-in-out infinite;
+  }
+
+  .nav-dock {
+    @apply relative hidden items-center rounded-xl border border-border bg-background/45 px-1.5 py-1 shadow-[inset_0_1px_0_hsl(0_0%_100%/0.04)] backdrop-blur-xl lg:flex;
+  }
+
+  .nav-dock::before {
+    content: "";
+    position: absolute;
+    inset: -1px;
+    border-radius: inherit;
+    pointer-events: none;
+    background: linear-gradient(90deg, transparent, hsl(var(--primary) / 0.22), transparent);
+    opacity: 0;
+    transition: opacity 280ms ease;
+  }
+
+  .nav-dock:hover::before {
+    opacity: 1;
+  }
+
+  .nav-dock-item {
+    @apply relative z-10 inline-flex min-w-[44px] items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-300;
+    transform-origin: bottom center;
+  }
+
+  .nav-dock:hover .nav-dock-item {
+    opacity: 0.78;
+  }
+
+  .nav-dock .nav-dock-item:hover,
+  .nav-dock .nav-dock-item:focus-visible,
+  .nav-dock .nav-dock-item.is-active {
+    opacity: 1;
+    transform: translateY(-3px) scale(1.045);
+    background: hsl(var(--primary) / 0.09);
+    color: hsl(var(--foreground));
+  }
+
+  .nav-dock-icon {
+    @apply h-4 w-4 text-primary transition-transform duration-300;
+  }
+
+  .nav-dock-item:hover .nav-dock-icon,
+  .nav-dock-item.is-active .nav-dock-icon {
+    transform: translateY(-1px) scale(1.08);
+  }
+
+  .nav-dock-label {
+    @apply whitespace-nowrap;
+  }
+
+  .craft-folder-wrap {
+    @apply relative inline-grid place-items-center rounded-xl p-4 text-left transition-transform duration-300 hover:-translate-y-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background;
+  }
+
+  .craft-folder {
+    position: relative;
+    display: block;
+    width: 110px;
+    height: 90px;
+    transition: transform 260ms ease;
+  }
+
+  .craft-folder-wrap:hover .craft-folder,
+  .craft-folder.is-open {
+    transform: translateY(-8px);
+  }
+
+  .craft-folder-back {
+    position: absolute;
+    inset: 12px 4px 0;
+    border-radius: 0 12px 12px 12px;
+    background: #9f7427;
+    box-shadow: inset 0 1px 0 hsl(0 0% 100% / 0.18), 0 18px 35px -22px hsl(0 0% 0% / 0.85);
+  }
+
+  .craft-folder-back::before {
+    content: "";
+    position: absolute;
+    bottom: calc(100% - 1px);
+    left: 0;
+    width: 34px;
+    height: 13px;
+    border-radius: 7px 7px 0 0;
+    background: #9f7427;
+  }
+
+  .craft-paper {
+    position: absolute;
+    left: 50%;
+    bottom: 12%;
+    z-index: 2;
+    display: grid;
+    width: 72%;
+    height: 78%;
+    place-items: center;
+    border-radius: 9px;
+    border: 1px solid hsl(38 48% 72% / 0.45);
+    background: hsl(40 28% 90%);
+    color: hsl(30 12% 12%);
+    font-size: 0.6rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    transform: translate(-50%, 12%);
+    transition: transform 330ms cubic-bezier(0.22, 1, 0.36, 1), height 330ms ease;
+  }
+
+  .craft-paper-2 {
+    width: 82%;
+    height: 68%;
+    background: hsl(40 34% 94%);
+  }
+
+  .craft-paper-3 {
+    width: 92%;
+    height: 58%;
+    background: hsl(40 42% 98%);
+  }
+
+  .craft-folder-wrap:hover .craft-paper-1,
+  .craft-folder.is-open .craft-paper-1 {
+    transform: translate(-118%, -65%) rotate(-14deg);
+  }
+
+  .craft-folder-wrap:hover .craft-paper-2,
+  .craft-folder.is-open .craft-paper-2 {
+    height: 78%;
+    transform: translate(8%, -66%) rotate(13deg);
+  }
+
+  .craft-folder-wrap:hover .craft-paper-3,
+  .craft-folder.is-open .craft-paper-3 {
+    height: 80%;
+    transform: translate(-50%, -92%) rotate(4deg);
+  }
+
+  .craft-folder-front {
+    position: absolute;
+    inset: 0;
+    z-index: 4;
+    border-radius: 7px 12px 12px 12px;
+    background: linear-gradient(145deg, hsl(var(--primary)), #a87a22);
+    transform-origin: bottom;
+    transition: transform 320ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .craft-folder-front-right {
+    clip-path: polygon(50% 0, 100% 0, 100% 100%, 50% 100%);
+  }
+
+  .craft-folder-wrap:hover .craft-folder-front,
+  .craft-folder.is-open .craft-folder-front {
+    transform: skew(14deg) scaleY(0.62);
+  }
+
+  .craft-folder-wrap:hover .craft-folder-front-right,
+  .craft-folder.is-open .craft-folder-front-right {
+    transform: skew(-14deg) scaleY(0.62);
+  }
+
+  .barber-galaxy {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    opacity: 0.4;
+    pointer-events: none;
+    background:
+      radial-gradient(circle at 18% 22%, hsl(var(--primary) / 0.16), transparent 18%),
+      radial-gradient(circle at 78% 18%, hsl(44 86% 76% / 0.09), transparent 16%),
+      radial-gradient(circle at 50% 75%, hsl(var(--primary) / 0.1), transparent 22%);
+  }
+
+  .barber-galaxy::before,
+  .barber-galaxy::after,
+  .barber-galaxy span {
+    content: "";
+    position: absolute;
+    inset: -20%;
+    background-image:
+      radial-gradient(circle, hsl(44 86% 76% / 0.56) 0 1px, transparent 1.5px),
+      radial-gradient(circle, hsl(0 0% 100% / 0.42) 0 1px, transparent 1.4px);
+    background-position: 0 0, 34px 44px;
+    background-size: 86px 86px, 132px 132px;
+    animation: galaxy-drift 26s linear infinite;
+  }
+
+  .barber-galaxy::after {
+    opacity: 0.5;
+    transform: rotate(18deg) scale(1.15);
+    animation-duration: 38s;
+    animation-direction: reverse;
+  }
+
+  .barber-galaxy span:nth-child(1) {
+    opacity: 0.35;
+    transform: rotate(-12deg) scale(1.35);
+    animation-duration: 44s;
+  }
+
+  .barber-galaxy span:nth-child(2),
+  .barber-galaxy span:nth-child(3) {
+    display: none;
+  }
+
+  .gradual-blur-edge {
+    position: absolute;
+    left: 0;
+    right: 0;
+    z-index: 2;
+    height: 7rem;
+    pointer-events: none;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    mask-image: linear-gradient(to bottom, black, transparent);
+    -webkit-mask-image: linear-gradient(to bottom, black, transparent);
+  }
+
+  .gradual-blur-top {
+    top: 0;
+    transform: rotate(180deg);
+  }
+
+  .gradual-blur-bottom {
+    bottom: 0;
+  }
+
+  .barber-spotlight {
+    --spot-x: 50%;
+    --spot-y: 50%;
+    --tilt-x: 0deg;
+    --tilt-y: 0deg;
+    position: relative;
+    perspective: 900px;
+  }
+
+  .barber-spotlight-glow {
+    position: absolute;
+    inset: 8%;
+    border-radius: 28px;
+    background: radial-gradient(circle at var(--spot-x) var(--spot-y), hsl(var(--primary) / 0.42), transparent 42%);
+    filter: blur(42px);
+    opacity: 0.45;
+    transition: opacity 240ms ease;
+  }
+
+  .barber-spotlight-card {
+    position: relative;
+    display: grid;
+    overflow: hidden;
+    min-height: 420px;
+    border: 1px solid hsl(var(--primary) / 0.22);
+    border-radius: 22px;
+    background:
+      radial-gradient(circle at var(--spot-x) var(--spot-y), hsl(var(--primary) / 0.18), transparent 36%),
+      hsl(var(--card));
+    box-shadow: 0 34px 80px -42px hsl(0 0% 0% / 0.9), inset 0 1px 0 hsl(0 0% 100% / 0.06);
+    transform: rotateX(var(--tilt-x)) rotateY(var(--tilt-y));
+    transition: transform 180ms ease, border-color 260ms ease;
+  }
+
+  .barber-spotlight-card::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+      linear-gradient(115deg, transparent 20%, hsl(0 0% 100% / 0.13) 45%, transparent 62%),
+      radial-gradient(circle at var(--spot-x) var(--spot-y), hsl(44 86% 76% / 0.18), transparent 30%);
+    mix-blend-mode: screen;
+    pointer-events: none;
+  }
+
+  .barber-spotlight:hover .barber-spotlight-card {
+    border-color: hsl(var(--primary) / 0.45);
+  }
+
+  .barber-spotlight-image {
+    position: relative;
+    min-height: 300px;
+    overflow: hidden;
+    background: hsl(var(--secondary));
+  }
+
+  .barber-spotlight-image img {
+    filter: grayscale(0.18) contrast(1.04);
+    transition: transform 600ms ease, filter 600ms ease;
+  }
+
+  .barber-spotlight:hover .barber-spotlight-image img {
+    transform: scale(1.045);
+    filter: grayscale(0) contrast(1.08);
+  }
+
+  .barber-spotlight-copy {
+    position: relative;
+    z-index: 1;
+    padding: 1.5rem;
+  }
+
+  .barber-spotlight-copy h3 {
+    font-size: clamp(1.75rem, 4vw, 3rem);
+    line-height: 0.95;
+  }
+
+  .barber-spotlight-action {
+    @apply mt-6 inline-flex items-center gap-2 rounded-md border border-primary/30 bg-primary/10 px-4 py-2 text-sm font-semibold text-primary transition-all duration-300 hover:-translate-y-0.5 hover:bg-primary hover:text-primary-foreground;
+  }
+
+  @media (min-width: 900px) {
+    .barber-spotlight-card {
+      grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+    }
+    .barber-spotlight-image {
+      min-height: 100%;
+    }
+    .barber-spotlight-copy {
+      display: flex;
+      min-height: 420px;
+      flex-direction: column;
+      justify-content: center;
+      padding: 2rem;
+    }
+  }
+
+  /* Skeleton shimmer */
+  .skeleton {
+    @apply relative overflow-hidden rounded-md bg-muted;
+  }
+  .skeleton::after {
+    @apply absolute inset-0 -translate-x-full animate-shimmer bg-gradient-to-r from-transparent via-white/10 to-transparent content-[''];
+  }
+
+  /* Barber-pole loading bar */
+  .barber-pole {
+    background-image: repeating-linear-gradient(
+      45deg,
+      hsl(var(--primary)) 0 10px,
+      hsl(0 0% 100% / 0.85) 10px 20px,
+      hsl(0 70% 45%) 20px 30px,
+      hsl(0 0% 100% / 0.85) 30px 40px
+    );
+    background-size: 100% 48px;
+  }
+
+  .brand-pole-animated {
+    animation: brand-pole-scroll 1s linear infinite !important;
+  }
+
+  .testimonial-marquee {
+    animation: testimonial-marquee var(--marquee-duration, 30s) linear infinite;
+  }
+
+  .group:hover > .testimonial-marquee {
+    animation-play-state: paused;
+  }
+
+  .review-columns-wrap {
+    mask-image: linear-gradient(to bottom, transparent, black 15%, black 85%, transparent);
+    -webkit-mask-image: linear-gradient(to bottom, transparent, black 15%, black 85%, transparent);
+  }
+
+  .review-column {
+    min-width: 0;
+  }
+
+  .review-column-track {
+    animation: review-column-scroll var(--review-duration, 30s) linear infinite;
+  }
+
+  .review-column-reverse .review-column-track {
+    animation-direction: reverse;
+  }
+
+  .group:hover .review-column-track {
+    animation-play-state: paused;
+  }
+
+  .review-column-card {
+    @apply relative overflow-hidden rounded-2xl border border-border bg-card;
+    min-height: 245px;
+    box-shadow: inset 0 1px 0 hsl(0 0% 100% / 0.04), 0 18px 52px -36px hsl(0 0% 0% / 0.78);
+    transition: transform 260ms ease, border-color 260ms ease, box-shadow 260ms ease;
+  }
+
+  .review-column-card::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0;
+    background:
+      radial-gradient(circle at 20% 0%, hsl(var(--primary) / 0.13), transparent 32%),
+      linear-gradient(135deg, hsl(0 0% 100% / 0.045), transparent 36%);
+    transition: opacity 260ms ease;
+  }
+
+  .review-column-card:hover {
+    transform: translateY(-4px);
+    border-color: hsl(var(--primary) / 0.36);
+    box-shadow: 0 24px 62px -35px hsl(0 0% 0% / 0.88), inset 0 1px 0 hsl(0 0% 100% / 0.06);
+  }
+
+  .review-column-card:hover::before {
+    opacity: 1;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  .text-pretty {
+    text-wrap: pretty;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .mask-fade-b {
+    -webkit-mask-image: linear-gradient(to bottom, black 70%, transparent 100%);
+    mask-image: linear-gradient(to bottom, black 70%, transparent 100%);
+  }
+}
+
+@keyframes testimonial-marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes review-column-scroll {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-50%);
+  }
+}
+
+@keyframes brand-pole-scroll {
+  from {
+    background-position: 0 0;
+  }
+  to {
+    background-position: 0 48px;
+  }
+}
+
+@keyframes nav-underline {
+  from {
+    opacity: 0;
+    transform: scaleX(0.4);
+  }
+  to {
+    opacity: 1;
+    transform: scaleX(1);
+  }
+}
+
+@keyframes mobile-menu {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes mobile-menu-out {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+}
+
+@keyframes menu-item {
+  from {
+    opacity: 0;
+    transform: translateX(-14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes hero-word {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
+}
+
+@keyframes hero-backdrop {
+  from {
+    transform: scale(1.055);
+    filter: saturate(0.85) contrast(0.95);
+  }
+  to {
+    transform: scale(1);
+    filter: saturate(1.06) contrast(1.04);
+  }
+}
+
+@keyframes soft-float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(8px);
+  }
+}
+
+@keyframes galaxy-drift {
+  from {
+    transform: translate3d(0, 0, 0) rotate(0deg);
+  }
+  to {
+    transform: translate3d(48px, -64px, 0) rotate(360deg);
+  }
+}
+
+@keyframes faq-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .brand-pole-animated {
+    animation: brand-pole-scroll 1s linear infinite !important;
+  }
+
+  .testimonial-marquee {
+    width: auto !important;
+    animation: none !important;
+  }
+  .review-column-track {
+    animation: none !important;
+  }
+  .review-columns-wrap {
+    mask-image: none;
+    -webkit-mask-image: none;
+  }
+  .reveal-motion,
+  .stagger-item,
+  .hero-word {
+    opacity: 1 !important;
+    transform: none !important;
+    filter: none !important;
+    transition: none !important;
+    animation: none !important;
+  }
+  .hero-backdrop,
+  .soft-float,
+  .animate-mobile-menu,
+  .animate-menu-item,
+  .animate-nav-underline {
+    animation: none !important;
+  }
+  .premium-card:hover {
+    transform: none;
+  }
+  .barber-galaxy::before,
+  .barber-galaxy::after,
+  .barber-galaxy span,
+  .craft-folder,
+  .craft-paper,
+  .craft-folder-front,
+  .barber-spotlight-card,
+  .barber-spotlight-image img {
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
+  }
+}

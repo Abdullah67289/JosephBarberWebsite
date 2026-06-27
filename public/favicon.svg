@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <rect width="64" height="64" rx="14" fill="#f7f0e3"/>
+  <clipPath id="mark">
+    <rect width="64" height="64" rx="14"/>
+  </clipPath>
+  <g clip-path="url(#mark)">
+    <path d="M-18 56 56-18h20L2 56h-20Z" fill="#c4942b"/>
+    <path d="M8 72 72 8v22L30 72H8Z" fill="#c43d2f"/>
+    <path d="M36 78 78 36v20L56 78H36Z" fill="#c4942b"/>
+    <path d="M-8 20 20-8h14L-8 34V20Z" fill="#c4942b" opacity=".75"/>
+    <path d="M0 0h64v64H0z" fill="url(#shine)"/>
+  </g>
+  <rect x="1.5" y="1.5" width="61" height="61" rx="12.5" stroke="#c4942b" stroke-opacity=".42" stroke-width="3"/>
+  <text x="32" y="39" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="21" font-weight="900" letter-spacing="-3" fill="#0d0c0b">JM</text>
+  <defs>
+    <linearGradient id="shine" x1="7" y1="4" x2="58" y2="64" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#fff" stop-opacity=".58"/>
+      <stop offset=".5" stop-color="#fff" stop-opacity="0"/>
+      <stop offset="1" stop-color="#0d0c0b" stop-opacity=".12"/>
+    </linearGradient>
+  </defs>
+</svg>

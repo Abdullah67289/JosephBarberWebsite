@@ -1,0 +1,29 @@
+/* Per-navigation page-enter transition.
+   A Next.js App Router template re-mounts on every route change, so this CSS
+   animation replays each time the user navigates — giving a smooth, premium
+   page transition with zero JS and no hydration risk.
+
+   The "to" keyframe resolves transform back to `none` so no containing block
+   lingers after the animation — this keeps page-level `position: sticky`
+   (e.g. the shop checkout order summary) working correctly. */
+.pageTransition {
+  animation: pageEnter 0.52s cubic-bezier(0.22, 1, 0.36, 1) both;
+  transform-origin: top center;
+}
+
+@keyframes pageEnter {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 14px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pageTransition {
+    animation: none;
+  }
+}

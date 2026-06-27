@@ -1,0 +1,623 @@
+// Joseph & Mike's Barbershop — data model
+// -----------------------------------------------------------------------------
+// Portable schema: works on SQLite (zero-setup local dev) AND Postgres/Supabase.
+// To deploy on Supabase/Postgres, change `provider` to "postgresql" and point
+// DATABASE_URL at your pooled connection string, then run `prisma db push`.
+//
+// Conventions that keep the schema portable & timezone-safe:
+//   * Money is stored as integer cents (never floats).
+//   * Statuses are Strings validated by Zod unions (no DB enums) so the same
+//     schema compiles on SQLite and Postgres.
+//   * Appointment instants are DateTime stored in UTC. Wall-clock business
+//     rules (hours, breaks) are stored as minutes-from-midnight + day-of-week
+//     and resolved against the shop timezone in src/lib/availability.ts.
+// -----------------------------------------------------------------------------
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite" // ← change to "postgresql" for Supabase / production
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------- Auth & staff
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  name         String
+  passwordHash String
+  role         String   @default("BARBER") // OWNER | ADMIN | BARBER
+  isActive     Boolean  @default(true)
+  staffId      String?  @unique
+  staff        Staff?   @relation(fields: [staffId], references: [id], onDelete: SetNull)
+  lastLoginAt  DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Staff {
+  id              String         @id @default(cuid())
+  name            String
+  slug            String         @unique
+  title           String         @default("Barber")
+  bio             String?
+  photoUrl        String?
+  email           String?
+  phone           String?
+  color           String         @default("#c4942b") // calendar accent
+  displayOrder    Int            @default(0)
+  isActive        Boolean        @default(true)
+  showOnPublicSite Boolean        @default(true)
+  acceptsBookings Boolean        @default(true)
+  user            User?
+  hours           StaffHour[]
+  breaks          Break[]
+  closures        Closure[]
+  specialHours    SpecialHour[]
+  services        ServiceStaff[]
+  bookings        Booking[]
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+}
+
+// ---------------------------------------------------------------- Services
+
+model ServiceCategory {
+  id           String    @id @default(cuid())
+  name         String
+  slug         String    @unique
+  description  String?
+  displayOrder Int       @default(0)
+  isActive     Boolean   @default(true)
+  services     Service[]
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
+
+model Service {
+  id              String           @id @default(cuid())
+  name            String
+  slug            String           @unique
+  description     String           @default("")
+  categoryId      String?
+  category        ServiceCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  durationMin     Int              @default(30)
+  bufferBeforeMin Int              @default(0)
+  bufferAfterMin  Int              @default(0)
+  priceCents      Int              @default(0)
+  depositCents    Int              @default(0)
+  imageUrl        String?
+  icon            String? // lucide icon name
+  isActive        Boolean          @default(true)
+  showOnServicesPage Boolean       @default(true)
+  isBookable      Boolean          @default(true)
+  isFeatured      Boolean          @default(false)
+  displayOrder    Int              @default(0)
+  staff           ServiceStaff[]
+  addons          ServiceAddon[]
+  bookings        Booking[]
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+}
+
+model ServiceStaff {
+  id        String  @id @default(cuid())
+  serviceId String
+  staffId   String
+  service   Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  staff     Staff   @relation(fields: [staffId], references: [id], onDelete: Cascade)
+
+  @@unique([serviceId, staffId])
+}
+
+model ServiceAddon {
+  id           String  @id @default(cuid())
+  serviceId    String
+  service      Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  name         String
+  priceCents   Int     @default(0)
+  durationMin  Int     @default(0)
+  isActive     Boolean @default(true)
+  displayOrder Int     @default(0)
+}
+
+// ---------------------------------------------------------------- Availability
+
+model BusinessHour {
+  id          String  @id @default(cuid())
+  dayOfWeek   Int     @unique // 0 = Sunday ... 6 = Saturday
+  isOpen      Boolean @default(true)
+  openMinute  Int     @default(540) // 09:00
+  closeMinute Int     @default(1020) // 17:00
+}
+
+model StaffHour {
+  id          String  @id @default(cuid())
+  staffId     String
+  staff       Staff   @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  dayOfWeek   Int // 0..6
+  isWorking   Boolean @default(true)
+  startMinute Int     @default(540)
+  endMinute   Int     @default(1020)
+
+  @@unique([staffId, dayOfWeek])
+}
+
+model Break {
+  id          String  @id @default(cuid())
+  staffId     String?
+  staff       Staff?  @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  dayOfWeek   Int // 0..6 ; recurring weekly break (e.g. lunch)
+  startMinute Int
+  endMinute   Int
+  title       String  @default("Break")
+}
+
+// Holidays, temporary closures, blackout dates, staff vacations (full-day ranges)
+model Closure {
+  id        String   @id @default(cuid())
+  title     String
+  type      String   @default("closure") // holiday | closure | blackout | vacation
+  startDate String // YYYY-MM-DD (shop-local)
+  endDate   String // YYYY-MM-DD (inclusive)
+  staffId   String? // null = whole shop
+  staff     Staff?   @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  note      String?
+  createdAt DateTime @default(now())
+
+  @@index([startDate, endDate])
+}
+
+// Special hours overriding the weekly schedule for a specific date.
+model SpecialHour {
+  id          String  @id @default(cuid())
+  date        String // YYYY-MM-DD
+  staffId     String? // null = whole shop
+  staff       Staff?  @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  isClosed    Boolean @default(false)
+  openMinute  Int?
+  closeMinute Int?
+
+  @@index([date])
+}
+
+// ---------------------------------------------------------------- Customers & bookings
+
+model Customer {
+  id        String    @id @default(cuid())
+  name      String
+  email     String?   @unique
+  phone     String?
+  normalizedPhone String?
+  notes     String?
+  marketing Boolean   @default(false)
+  bookings  Booking[]
+  orders    Order[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model Booking {
+  id              String         @id @default(cuid())
+  reference       String         @unique // e.g. JM-7F3K2A
+  manageToken     String         @unique // secure random; powers customer edit/cancel link
+  status          String         @default("pending") // pending|confirmed|completed|cancelled|no_show|rescheduled
+  customerId      String
+  customer        Customer       @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  serviceId       String
+  service         Service        @relation(fields: [serviceId], references: [id])
+  staffId         String?
+  staff           Staff?         @relation(fields: [staffId], references: [id], onDelete: SetNull)
+  startAt         DateTime // UTC
+  endAt           DateTime // UTC (service end, excluding trailing buffer)
+  bufferBeforeMin Int            @default(0)
+  bufferAfterMin  Int            @default(0)
+  date            String // shop-local YYYY-MM-DD (fast filtering)
+  priceCents      Int            @default(0)
+  depositCents    Int            @default(0)
+  addonsCents     Int            @default(0)
+  notes           String? // customer note
+  internalNotes   String? // admin only
+  source          String         @default("online") // online|admin|walk_in
+  remindersSentAt DateTime?
+  cancelledAt     DateTime?
+  addons          BookingAddon[]
+  events          BookingEvent[]
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  @@index([staffId, startAt])
+  @@index([date])
+  @@index([status])
+}
+
+model BookingAddon {
+  id          String  @id @default(cuid())
+  bookingId   String
+  booking     Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  name        String
+  priceCents  Int     @default(0)
+  durationMin Int     @default(0)
+}
+
+model BookingEvent {
+  id        String   @id @default(cuid())
+  bookingId String
+  booking   Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  type      String // created | confirmed | rescheduled | cancelled | completed | no_show | updated | note
+  message   String
+  actor     String? // "customer" | user email | "system"
+  meta      String? // JSON-encoded snapshot
+  createdAt DateTime @default(now())
+
+  @@index([bookingId])
+}
+
+// ---------------------------------------------------------------- Shop / products
+
+model ProductCategory {
+  id           String    @id @default(cuid())
+  name         String
+  slug         String    @unique
+  description  String?
+  displayOrder Int       @default(0)
+  isActive     Boolean   @default(true)
+  products     Product[]
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
+
+model Product {
+  id               String           @id @default(cuid())
+  name             String
+  slug             String           @unique
+  description      String           @default("")
+  categoryId       String?
+  category         ProductCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  priceCents       Int              @default(0)
+  salePriceCents   Int?
+  sku              String?          @unique
+  stock            Int              @default(0)
+  trackInventory   Boolean          @default(true)
+  lowStockThreshold Int             @default(3)
+  isActive         Boolean          @default(true)
+  isFeatured       Boolean          @default(false)
+  displayOrder     Int              @default(0)
+  images           ProductImage[]
+  variants         ProductVariant[]
+  orderItems       OrderItem[]
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+}
+
+model ProductImage {
+  id           String  @id @default(cuid())
+  productId    String
+  product      Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  url          String
+  alt          String?
+  displayOrder Int     @default(0)
+}
+
+model ProductVariant {
+  id              String  @id @default(cuid())
+  productId       String
+  product         Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  name            String // e.g. "Size" / "Scent"
+  value           String // e.g. "Large" / "Cedar"
+  priceDeltaCents Int     @default(0)
+  stock           Int     @default(0)
+  sku             String?
+}
+
+model Order {
+  id               String      @id @default(cuid())
+  reference        String      @unique
+  customerId       String?
+  customer         Customer?   @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  customerName     String
+  customerEmail    String
+  customerPhone    String
+  status           String      @default("pending") // pending|paid|fulfilled|cancelled|refunded
+  fulfillmentType  String      @default("pickup") // pickup|shipping
+  fulfillmentStatus String     @default("unfulfilled") // unfulfilled|ready|completed
+  paymentStatus    String      @default("unpaid") // unpaid|paid|refunded
+  paymentProvider  String? // stripe | mock
+  stripeSessionId  String?
+  subtotalCents    Int         @default(0)
+  taxCents         Int         @default(0)
+  shippingCents    Int         @default(0)
+  totalCents       Int         @default(0)
+  shippingAddress  String? // JSON-encoded when fulfillmentType = shipping
+  notes            String?
+  internalNotes    String?
+  items            OrderItem[]
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+
+  @@index([status])
+}
+
+model OrderItem {
+  id            String   @id @default(cuid())
+  orderId       String
+  order         Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId     String?
+  product       Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+  variantId     String?
+  name          String // snapshot
+  variantLabel  String?
+  unitPriceCents Int
+  quantity      Int      @default(1)
+  totalCents    Int
+}
+
+// ---------------------------------------------------------------- Content & ops
+
+model ContactMessage {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  phone     String?
+  subject   String?
+  message   String
+  status    String   @default("new") // new|read|archived
+  createdAt DateTime @default(now())
+
+  @@index([status])
+}
+
+model GalleryImage {
+  id           String   @id @default(cuid())
+  url          String
+  title        String?
+  caption      String?
+  category     String?
+  alt          String?
+  displayOrder Int      @default(0)
+  isActive     Boolean  @default(true)
+  isFeatured   Boolean  @default(false)
+  createdAt    DateTime @default(now())
+}
+
+model Testimonial {
+  id           String   @id @default(cuid())
+  author       String
+  role         String?
+  sourceLabel  String?
+  rating       Int      @default(5)
+  text         String
+  avatarUrl    String?
+  isApproved   Boolean  @default(true)
+  isFeatured   Boolean  @default(false)
+  displayOrder Int      @default(0)
+  createdAt    DateTime @default(now())
+}
+
+model SiteSettings {
+  id          String @id @default("singleton")
+  businessName String @default("Joseph & Mike's Barbershop")
+  tagline      String @default("A Cut Above — Where Tradition Meets Modernity")
+  description  String @default("")
+
+  logoUrl         String?
+  faviconUrl      String?
+  heroImageUrl    String?
+  heroHeadline    String @default("A Cut Above")
+  heroSubheadline String @default("Where tradition meets modern craft.")
+  heroPrimaryCtaText String @default("Book Your Appointment")
+  heroPrimaryCtaHref String @default("/book")
+  heroSecondaryCtaText String @default("View Services")
+  heroSecondaryCtaHref String @default("/services")
+
+  aboutTitle String @default("Our Story")
+  aboutBody  String @default("")
+
+  phone      String  @default("905-878-3916")
+  email      String  @default("hello@josephandmikes.com")
+  address    String  @default("148 Main Street East")
+  city       String  @default("Milton")
+  region     String  @default("Ontario")
+  postalCode String  @default("L9T 1N6")
+  country    String  @default("Canada")
+  mapEmbedUrl String?
+  latitude   Float?
+  longitude  Float?
+
+  timezone String @default("America/Toronto")
+  currency String @default("CAD")
+
+  instagramUrl   String?
+  facebookUrl    String?
+  tiktokUrl      String?
+  youtubeUrl     String?
+  googleReviewUrl String?
+
+  // Header, navigation, brand and SEO
+  navBookText      String  @default("Book Now")
+  navBookHref      String  @default("/book")
+  showShopInNav    Boolean @default(true)
+  showCartButton   Boolean @default(true)
+  primaryAccentHex String  @default("#c4942b")
+  secondaryAccentHex String @default("#8b1e1e")
+  seoTitle         String?
+  seoDescription   String?
+  openGraphImageUrl String?
+
+  // Booking rules
+  slotIntervalMin         Int     @default(15)
+  minNoticeMin            Int     @default(120)
+  maxAdvanceDays          Int     @default(60)
+  maxPerSlot              Int     @default(1)
+  cancellationCutoffHours Int     @default(12)
+  depositRequired         Boolean @default(false)
+  allowAnyBarber          Boolean @default(true)
+  requireCustomerName     Boolean @default(true)
+  requireCustomerEmail    Boolean @default(false)
+  requireCustomerPhone    Boolean @default(false)
+  requireCustomerNotes    Boolean @default(false)
+  taxRatePct              Float   @default(13)
+
+  bookingPolicy      String?
+  cancellationPolicy String?
+  latePolicy         String?
+  noShowPolicy       String?
+  depositPolicy      String?
+  privacyPolicy      String?
+  bookingInstructions String?
+  bookingHelpText    String?
+  bookingNotesHelpText String?
+  bookingConfirmationTitle String @default("You're booked in!")
+  bookingConfirmationText  String @default("A confirmation is on its way. We can't wait to see you.")
+
+  enableEmail Boolean @default(true)
+  enableSms   Boolean @default(true)
+
+  updatedAt DateTime @updatedAt
+}
+
+model NavigationLink {
+  id           String   @id @default(cuid())
+  area         String   @default("header") // header | footer
+  label        String
+  href         String
+  isActive     Boolean  @default(true)
+  openInNewTab Boolean  @default(false)
+  displayOrder Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([area, isActive, displayOrder])
+  @@unique([area, href])
+}
+
+model PageContent {
+  id             String   @id @default(cuid())
+  pageKey        String   @unique // home | services | gallery | shop | story | contact | faq
+  eyebrow        String?
+  title          String
+  subtitle       String?
+  body           String?
+  ctaText        String?
+  ctaHref        String?
+  secondaryCtaText String?
+  secondaryCtaHref String?
+  heroImageUrl   String?
+  heroVideoUrl   String?
+  seoTitle       String?
+  seoDescription String?
+  ogImageUrl     String?
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model HomeSection {
+  id           String   @id @default(cuid())
+  sectionKey   String   @unique // stats | story | services | barbers | gallery | reviews | products | visit | cta
+  label        String
+  eyebrow      String?
+  title        String?
+  subtitle     String?
+  ctaText      String?
+  ctaHref      String?
+  isVisible    Boolean  @default(true)
+  itemLimit    Int      @default(0)
+  displayOrder Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model SiteStat {
+  id           String   @id @default(cuid())
+  label        String
+  value        Float
+  suffix       String?
+  icon         String?
+  isActive     Boolean  @default(true)
+  displayOrder Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model FaqItem {
+  id           String   @id @default(cuid())
+  question     String
+  answer       String
+  category     String?
+  isActive     Boolean  @default(true)
+  displayOrder Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model PolicyItem {
+  id           String   @id @default(cuid())
+  key          String   @unique // cancellation | late | no_show | deposit | privacy | booking
+  title        String
+  body         String
+  isActive     Boolean  @default(true)
+  displayOrder Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model TimelineItem {
+  id           String   @id @default(cuid())
+  label        String
+  title        String
+  body         String
+  imageUrl     String?
+  isActive     Boolean  @default(true)
+  displayOrder Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model MediaAsset {
+  id           String   @id @default(cuid())
+  url          String
+  provider     String   @default("external") // external | supabase
+  storageKey   String?
+  filename     String?
+  mimeType     String?
+  sizeBytes    Int?
+  alt          String?
+  caption      String?
+  createdBy    String?
+  createdAt    DateTime @default(now())
+}
+
+model AdminActionLog {
+  id          String   @id @default(cuid())
+  actorEmail  String
+  actorRole   String?
+  action      String
+  targetType  String
+  targetId    String?
+  message     String?
+  meta        String?
+  createdAt   DateTime @default(now())
+
+  @@index([targetType, targetId])
+  @@index([actorEmail, createdAt])
+}
+
+model NotificationLog {
+  id          String   @id @default(cuid())
+  channel     String // email | sms
+  to          String
+  template    String
+  subject     String?
+  body        String
+  status      String   @default("logged") // sent | failed | logged
+  error       String?
+  relatedType String? // booking | order | contact
+  relatedId   String?
+  createdAt   DateTime @default(now())
+
+  @@index([channel, createdAt])
+}

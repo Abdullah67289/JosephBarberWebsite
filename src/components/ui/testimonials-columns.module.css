@@ -1,0 +1,44 @@
+/* CSS-driven marquee for the testimonials columns.
+
+   Driving the scroll with CSS (instead of JS/framer-motion) means it starts the
+   moment the HTML paints — no waiting for hydration — so the reviews never load
+   late or pop in. Each card owns its trailing space via margin-bottom (not a
+   flex gap) so the duplicated list loops perfectly at translateY(-50%). */
+
+.scroller {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  animation: testimonials-scroll var(--duration, 20s) linear infinite;
+  will-change: transform;
+}
+
+.scroller > figure {
+  margin-bottom: 1.5rem;
+}
+
+/* Pause when the reader hovers a column. */
+.scroller:hover {
+  animation-play-state: paused;
+}
+
+@keyframes testimonials-scroll {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-50%);
+  }
+}
+
+/* The reviews are an intentional, continuous marquee that the user has asked to
+   keep running. globals.css has a global prefers-reduced-motion reset that forces
+   every animation to ~0ms; re-enable it for this component only (higher
+   specificity than the global `*` rule, so it wins even with !important). */
+@media (prefers-reduced-motion: reduce) {
+  .scroller {
+    animation-duration: var(--duration, 20s) !important;
+    animation-iteration-count: infinite !important;
+  }
+}
+

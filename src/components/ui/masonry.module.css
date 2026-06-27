@@ -1,0 +1,39 @@
+.list {
+  position: relative;
+  width: 100%;
+}
+
+.itemWrapper {
+  position: absolute;
+  top: 0;
+  left: 0;
+  padding: 6px;
+  cursor: pointer;
+  opacity: 0; /* revealed by the GSAP entrance so items never flash unpositioned */
+  will-change: transform, width, height, opacity;
+}
+
+.itemWrapper > .itemImg {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background-size: cover;
+  background-position: center center;
+  border-radius: 12px;
+  border: 1px solid hsl(var(--border));
+  box-shadow: 0 12px 40px -12px rgba(0, 0, 0, 0.4);
+  transition: box-shadow 0.3s ease;
+}
+
+.itemWrapper:hover > .itemImg {
+  box-shadow: 0 18px 50px -10px rgba(0, 0, 0, 0.5);
+}
+
+.colorOverlay {
+  position: absolute;
+  inset: 0;
+  border-radius: 12px;
+  opacity: 0;
+  pointer-events: none;
+  background: linear-gradient(45deg, rgba(212, 160, 75, 0.45), rgba(40, 30, 22, 0.45));
+}
