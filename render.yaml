@@ -1,0 +1,19 @@
+# Render Blueprint — deploys the full app (Node runtime + SQLite).
+# If your GitHub repo keeps the app inside a "barbershop/" subfolder, add
+#   rootDir: barbershop
+# under the service. (If the repo root already IS the app, leave it out.)
+services:
+  - type: web
+    name: joseph-mikes-barbershop
+    runtime: node
+    plan: free
+    # --include=dev guarantees prisma + tsx are present for the seed step.
+    buildCommand: npm install --include=dev && npm run setup && npm run build
+    startCommand: npm run start
+    envVars:
+      - key: DATABASE_URL
+        value: file:./dev.db
+      - key: AUTH_SECRET
+        generateValue: true
+      - key: NEXT_PUBLIC_SITE_URL
+        sync: false # set this to your Render URL after the first deploy
