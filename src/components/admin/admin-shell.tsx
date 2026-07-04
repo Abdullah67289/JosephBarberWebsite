@@ -17,6 +17,8 @@ import {
   Settings,
   UserCog,
   UserCircle,
+  Activity,
+  Bell,
   PanelsTopLeft,
   Menu,
   X,
@@ -60,6 +62,7 @@ const NAV_GROUPS: NavGroup[] = [
     heading: "Inbox & system",
     items: [
       { href: "/admin/messages", label: "Messages", icon: MessageSquare, access: "manage_messages" },
+      { href: "/admin/activity", label: "Activity Log", icon: Activity, access: "owner" },
       { href: "/admin/team", label: "Manage Team", icon: UserCog, access: "owner" },
       { href: "/admin/settings", label: "Settings", icon: Settings, access: "owner" },
       { href: "/admin/account", label: "My Account", icon: UserCircle, access: "always" },
@@ -70,10 +73,12 @@ const NAV_GROUPS: NavGroup[] = [
 export function AdminShell({
   session,
   grants,
+  notifications,
   children,
 }: {
   session: { name: string; email: string; role: Role; isDevBypass?: boolean };
   grants: string[];
+  notifications?: { pendingBookings: number; newMessages: number };
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
@@ -172,6 +177,7 @@ export function AdminShell({
           </button>
           <p className="font-display text-base font-semibold lg:text-lg">{currentLabel}</p>
           <div className="flex items-center gap-3">
+            {notifications && <NotificationBell {...notifications} canBookings={isOwner || grantSet.has("manage_bookings")} canMessages={isOwner || grantSet.has("manage_messages")} />}
             <Link href="/" target="_blank" className="hidden items-center gap-1.5 rounded-xl border border-border bg-card/70 px-3 py-2 text-sm text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground sm:flex">
               <ExternalLink className="h-4 w-4" /> View site
             </Link>
@@ -197,6 +203,63 @@ export function AdminShell({
         </main>
       </div>
       </div>
+    </div>
+  );
+}
+
+function NotificationBell({
+  pendingBookings,
+  newMessages,
+  canBookings,
+  canMessages,
+}: {
+  pendingBookings: number;
+  newMessages: number;
+  canBookings: boolean;
+  canMessages: boolean;
+}) {
+  const [open, setOpen] = React.useState(false);
+  const items = [
+    canBookings && pendingBookings > 0
+      ? { href: "/admin/bookings?status=pending", label: `${pendingBookings} booking${pendingBookings === 1 ? "" : "s"} pending confirmation` }
+      : null,
+    canMessages && newMessages > 0
+      ? { href: "/admin/messages", label: `${newMessages} new message${newMessages === 1 ? "" : "s"}` }
+      : null,
+  ].filter(Boolean) as { href: string; label: string }[];
+  const count = items.length ? pendingBookings * (canBookings ? 1 : 0) + newMessages * (canMessages ? 1 : 0) : 0;
+
+  return (
+    <div className="relative">
+      <button
+        onClick={() => setOpen((o) => !o)}
+        className="relative grid h-9 w-9 place-items-center rounded-full border border-border bg-card/70 text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
+        aria-label="Notifications"
+      >
+        <Bell className="h-[18px] w-[18px]" />
+        {count > 0 && (
+          <span className="absolute -right-0.5 -top-0.5 grid h-4 min-w-4 place-items-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground">
+            {count > 9 ? "9+" : count}
+          </span>
+        )}
+      </button>
+      {open && (
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} aria-hidden />
+          <div className="absolute right-0 top-11 z-50 w-72 rounded-xl border border-border bg-card p-2 shadow-2xl animate-in fade-in slide-in-from-top-1 duration-150">
+            {items.length === 0 ? (
+              <p className="p-3 text-sm text-muted-foreground">You&apos;re all caught up.</p>
+            ) : (
+              items.map((it) => (
+                <Link key={it.href} href={it.href} onClick={() => setOpen(false)} className="flex items-center gap-2 rounded-lg p-3 text-sm transition-colors hover:bg-secondary">
+                  <span className="h-2 w-2 shrink-0 rounded-full bg-primary" />
+                  {it.label}
+                </Link>
+              ))
+            )}
+          </div>
+        </>
+      )}
     </div>
   );
 }

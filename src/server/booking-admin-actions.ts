@@ -15,7 +15,8 @@ import {
   notifyBookingCancelled,
   notifyAdminCancellation,
 } from "@/lib/notifications";
-import { guard, actionOk, actionError, toActionError, type ActionResult } from "./_helpers";
+import { guard, actionOk, actionError, toActionError, logAdminAction, type ActionResult } from "./_helpers";
+import { usingD1 } from "@/lib/db";
 
 function revalidateBookings() {
   revalidatePath("/admin/bookings");
@@ -58,7 +59,7 @@ export async function adminCreateBooking(raw: unknown): Promise<ActionResult> {
     });
     const full = await db.booking.findUnique({ where: { id: booking.id }, include: bookingInclude });
     if (full && data.status !== "completed") void notifyBookingConfirmation(full);
-    void session;
+    await logAdminAction({ actorEmail: session.email, actorRole: session.role, action: "create", targetType: "booking", targetId: booking.id, message: `Created booking ${booking.reference}` });
     revalidateBookings();
     return actionOk({ id: booking.id, reference: booking.reference });
   } catch (err) {
@@ -89,6 +90,7 @@ export async function adminSetBookingStatus(id: string, status: string): Promise
         },
       });
     }
+    await logAdminAction({ actorEmail: session.email, actorRole: session.role, action: "update", targetType: "booking", targetId: id, message: `Booking marked ${status.replace("_", " ")}` });
     revalidateBookings();
     return actionOk();
   } catch (err) {
@@ -117,6 +119,7 @@ export async function adminRescheduleBooking(
     );
     const full = await db.booking.findUnique({ where: { id: updated!.id }, include: bookingInclude });
     if (full) void notifyBookingRescheduled(full);
+    await logAdminAction({ actorEmail: session.email, actorRole: session.role, action: "update", targetType: "booking", targetId: id, message: "Rescheduled booking" });
     revalidateBookings();
     return actionOk();
   } catch (err) {
@@ -137,7 +140,7 @@ export async function adminUpdateBooking(id: string, raw: unknown): Promise<Acti
       }
     }
 
-    await db.$transaction(async (tx) => {
+    const applyUpdate = async (tx: typeof db) => {
       if (data.customer) {
         const nextEmail =
           data.customer.email !== undefined ? cleanNullable(data.customer.email) : current.customer.email;
@@ -168,7 +171,11 @@ export async function adminUpdateBooking(id: string, raw: unknown): Promise<Acti
           events: { create: { type: "updated", message: "Booking details updated", actor: session.email } },
         },
       });
-    });
+    };
+    // D1 has no interactive transactions; run sequentially there.
+    if (usingD1()) await applyUpdate(db);
+    else await db.$transaction((tx) => applyUpdate(tx as unknown as typeof db));
+    await logAdminAction({ actorEmail: session.email, actorRole: session.role, action: "update", targetType: "booking", targetId: id, message: "Updated booking details" });
     revalidateBookings();
     return actionOk();
   } catch (err) {
@@ -177,9 +184,10 @@ export async function adminUpdateBooking(id: string, raw: unknown): Promise<Acti
 }
 
 export async function adminDeleteBooking(id: string): Promise<ActionResult> {
-  await guard("manage_bookings");
+  const session = await guard("manage_bookings");
   try {
     await db.booking.delete({ where: { id } });
+    await logAdminAction({ actorEmail: session.email, actorRole: session.role, action: "delete", targetType: "booking", targetId: id, message: "Deleted booking" });
     revalidateBookings();
     return actionOk();
   } catch (err) {
