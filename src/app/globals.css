@@ -186,6 +186,44 @@
   }
 }
 
+/* Scroll-driven section entrance ("builds itself" while scrolling into view) —
+   the same feel as the gallery showcase, but scrubbed natively by the browser
+   with a CSS view timeline: no JS, reversible, buttery. The `to` frame resolves
+   to `transform: none` so fixed-position children (map overlay, lightboxes)
+   behave normally once a section has fully entered. Browsers without
+   animation-timeline support simply show the sections statically. Scroll-driven
+   progress ignores animation-duration, so the global reduced-motion reset
+   below does not break it. */
+@supports (animation-timeline: view()) {
+  .section-build {
+    animation: section-build linear both;
+    animation-timeline: view();
+    animation-range: entry 5% entry 85%;
+    transform-origin: center 85%;
+  }
+
+  /* The global reduced-motion reset zeroes animation-duration, which collapses
+     a scroll-driven animation to its end state (no scrub). With a view
+     timeline any non-zero duration spans the full range, so re-assert one —
+     this is a scroll-scrubbed, non-vestibular reveal the user asked to keep. */
+  @media (prefers-reduced-motion: reduce) {
+    .section-build {
+      animation-duration: 1s !important;
+    }
+  }
+}
+
+@keyframes section-build {
+  from {
+    opacity: 0.01;
+    transform: perspective(1100px) translateY(90px) rotateX(9deg) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

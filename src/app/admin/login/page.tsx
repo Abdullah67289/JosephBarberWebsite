@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
-import { env, isAdminSignupAllowed, isDevAdminBypassAllowed, isLocalSiteUrl } from "@/lib/env";
+import { isAdminSignupAllowed, isDevAdminBypassAllowed } from "@/lib/env";
 import { getSettings } from "@/lib/settings";
 import { StaffLoginExperience } from "@/components/admin/staff-login-experience";
 
@@ -24,7 +24,6 @@ export default async function AdminLoginPage({
   const s = await getSettings();
   const devBypassEnabled = isDevAdminBypassAllowed();
   const signupEnabled = isAdminSignupAllowed();
-  const showTestCreds = !env.isProduction || isLocalSiteUrl();
   const notice = sp.error ? ERROR_NOTICES[sp.error] : undefined;
 
   return (
@@ -32,7 +31,6 @@ export default async function AdminLoginPage({
       businessName={s.businessName}
       next={sp.next}
       devBypassEnabled={devBypassEnabled}
-      showTestCreds={showTestCreds}
       signupEnabled={signupEnabled}
       notice={notice}
     />

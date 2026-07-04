@@ -31,13 +31,23 @@ says `REPLACE_WITH_D1_DATABASE_ID`.
 npx wrangler r2 bucket create joseph-mikes-barbershop-uploads
 ```
 
-## 4. Create the tables + load the demo content
+## 4. Create the tables + load the site content
 ```
 npm run d1:migrate        # creates all tables in D1 (migrations/0001_init.sql)
-npm run d1:seed           # loads the demo content (d1/seed-data.sql)
+npm run d1:seed           # loads the site content (d1/seed-data.sql)
 ```
-To refresh the demo content later: `npm run setup && npm run d1:export`, then
-`npm run d1:seed` again.
+The committed seed contains ONLY site content (services, staff profiles, hours,
+gallery, testimonials). It never contains accounts, customers or bookings.
+
+## 4b. Create the owner account (kept out of the repo on purpose)
+```
+node scripts/make-owner.mjs
+npx wrangler d1 execute joseph-mikes-barbershop --remote --file=d1/owner-setup.sql
+```
+The script prints the owner password ONCE — store it in a password manager.
+`d1/owner-setup.sql` is gitignored, so no credential material is ever committed.
+Workers (barber/admin accounts) are then created from **Admin → Manage Team**,
+and everyone can change their own password from **Admin → My Account**.
 
 ## 5. Set the secrets
 Run each and paste the value when prompted:
@@ -65,13 +75,12 @@ URL into `wrangler.jsonc` → `vars.NEXT_PUBLIC_SITE_URL` and run `npm run deplo
 once more so links/emails use the right domain.
 
 ## Admin login
-- Owner: `owner@josephandmikes.com` / `ChangeMe!2024`
-- Demo admin: `admin@test.com` / `Admin123!`
+The only account is the owner (`cosimo.pedulla3@gmail.com`) created in step 4b.
+There are no demo or test accounts anywhere.
 
-Change these immediately from **Admin → My Account**. For a real (non-demo)
-production site, remove the demo admin: it is only seeded because this database
-was exported from a local dev seed. Delete that account from **Manage Team**, or
-re-export the seed after setting `SEED_TEST_ADMIN` unset in production.
+Recommended extra lock-down: in `wrangler.jsonc` `vars`, set
+`ADMIN_ALLOWED_EMAILS` to a comma-separated list of the owner + worker emails —
+then no other email can ever sign in, even if an account row existed.
 
 ## Continuous deploys (optional)
 In the Cloudflare dashboard → **Workers & Pages → Create → Connect to Git**,

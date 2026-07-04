@@ -18,7 +18,7 @@ export const env = {
   allowDevAdminBypass: get("ALLOW_DEV_ADMIN_BYPASS", "false").toLowerCase() === "true",
   allowAdminSignup: get("ALLOW_ADMIN_SIGNUP", "false").toLowerCase() === "true",
 
-  seedAdminEmail: get("SEED_ADMIN_EMAIL", "owner@josephandmikes.com"),
+  seedAdminEmail: get("SEED_ADMIN_EMAIL", "cosimo.pedulla3@gmail.com"),
   seedAdminPassword: get("SEED_ADMIN_PASSWORD", "ChangeMe!2024"),
 
   email: {

@@ -1,7 +1,7 @@
 import { Navbar } from "@/components/site/navbar";
 import { Footer } from "@/components/site/footer";
 import { SiteIntro } from "@/components/site/site-intro";
-import GradualBlur from "@/components/animations/GradualBlur";
+import { PageEdgeBlur } from "@/components/site/page-edge-blur";
 import { getSettings } from "@/lib/settings";
 import { getNavigationLinks } from "@/lib/queries";
 
@@ -39,17 +39,7 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
       />
       <main className="flex-1">{children}</main>
       <Footer />
-      <GradualBlur
-        target="page"
-        position="bottom"
-        height="6rem"
-        strength={2}
-        divCount={5}
-        curve="bezier"
-        exponential
-        opacity={1}
-        style={{ zIndex: 20 }}
-      />
+      <PageEdgeBlur />
     </div>
   );
 }

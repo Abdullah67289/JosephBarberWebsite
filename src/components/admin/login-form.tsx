@@ -61,12 +61,10 @@ function SubmitButton() {
 export function LoginForm({
   next,
   devBypassEnabled,
-  showTestCreds,
   onMoodChange,
 }: {
   next?: string;
   devBypassEnabled?: boolean;
-  showTestCreds?: boolean;
   onMoodChange?: (mood: LoginMood) => void;
 }) {
   const [state, formAction] = useActionState<LoginState, FormData>(loginAction, {});
@@ -243,28 +241,6 @@ export function LoginForm({
         </form>
       )}
 
-      {showTestCreds && (
-        <div className="rounded-lg border border-border bg-secondary/40 p-3 text-xs">
-          <p className="mb-1.5 font-semibold text-foreground">Local test login (development only)</p>
-          <p className="text-muted-foreground">
-            Email: <span className="font-mono text-foreground">admin@test.com</span>
-          </p>
-          <p className="text-muted-foreground">
-            Password: <span className="font-mono text-foreground">Admin123!</span>
-          </p>
-          <button
-            type="button"
-            onClick={() => {
-              setEmail("admin@test.com");
-              setPassword("Admin123!");
-              onMoodChange?.("peek");
-            }}
-            className="mt-2 font-medium text-primary hover:underline"
-          >
-            Fill test credentials
-          </button>
-        </div>
-      )}
     </div>
   );
 }

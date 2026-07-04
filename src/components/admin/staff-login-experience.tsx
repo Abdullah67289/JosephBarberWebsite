@@ -10,14 +10,12 @@ export function StaffLoginExperience({
   businessName,
   next,
   devBypassEnabled,
-  showTestCreds,
   signupEnabled,
   notice,
 }: {
   businessName: string;
   next?: string;
   devBypassEnabled: boolean;
-  showTestCreds: boolean;
   signupEnabled: boolean;
   notice?: string;
 }) {
@@ -170,7 +168,6 @@ export function StaffLoginExperience({
               <LoginForm
                 next={next}
                 devBypassEnabled={devBypassEnabled}
-                showTestCreds={showTestCreds}
                 onMoodChange={setMood}
               />
 

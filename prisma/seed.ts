@@ -10,7 +10,9 @@ import { hashPassword } from "../src/lib/password";
 
 const db = new PrismaClient();
 
-const ADMIN_EMAIL = (process.env.SEED_ADMIN_EMAIL || "owner@josephandmikes.com").toLowerCase();
+// The shop owner's login email. Deliberately hardcoded (no env override): the
+// owner account is the root of the permission system and must not drift.
+const ADMIN_EMAIL = "cosimo.pedulla3@gmail.com";
 const ADMIN_PASSWORD = process.env.SEED_ADMIN_PASSWORD || "ChangeMe!2024";
 
 const img = (id: string, w = 1200, h = 900) =>
@@ -255,46 +257,29 @@ async function main() {
     staff = await db.staff.findMany({ orderBy: { displayOrder: "asc" } });
   }
   const [joseph, cosimo, marco] = staff;
+  void joseph;
+  void marco;
 
-  // Owner user linked to Joseph.
+  // Owner account — Cosimo runs the shop. The password comes exclusively from
+  // SEED_ADMIN_PASSWORD (never committed); only its PBKDF2 hash is stored, and
+  // the production seed export (scripts/export-seed-sql.mjs) excludes account
+  // tables entirely, so no credential material ever reaches the public repo.
   const passwordHash = await hashPassword(ADMIN_PASSWORD);
   await db.user.upsert({
     where: { email: ADMIN_EMAIL },
-    update: { passwordHash, role: "OWNER", isActive: true, staffId: joseph?.id },
+    update: { passwordHash, role: "OWNER", isActive: true, staffId: cosimo?.id },
     create: {
       email: ADMIN_EMAIL,
-      name: "Joseph Pedulla",
+      name: "Cosimo Pedulla",
       passwordHash,
       role: "OWNER",
-      staffId: joseph?.id,
+      staffId: cosimo?.id,
     },
   });
 
-  // Local testing / demo admin. Publicly-known credentials, so it is NEVER
-  // provisioned in production unless SEED_TEST_ADMIN=true is set explicitly
-  // (e.g. for a throwaway public demo). Existing copies are deactivated.
-  const TEST_ADMIN_EMAIL = "admin@test.com";
-  const TEST_ADMIN_PASSWORD = "Admin123!";
-  const allowTestAdmin =
-    process.env.NODE_ENV !== "production" || process.env.SEED_TEST_ADMIN === "true";
-  if (allowTestAdmin) {
-    const testHash = await hashPassword(TEST_ADMIN_PASSWORD);
-    await db.user.upsert({
-      where: { email: TEST_ADMIN_EMAIL },
-      update: { passwordHash: testHash, role: "OWNER", isActive: true },
-      create: {
-        email: TEST_ADMIN_EMAIL,
-        name: "Test Admin",
-        passwordHash: testHash,
-        role: "OWNER",
-      },
-    });
-  } else {
-    await db.user.updateMany({
-      where: { email: TEST_ADMIN_EMAIL },
-      data: { isActive: false },
-    });
-  }
+  // No demo/test accounts. This seed is production content only; the owner
+  // creates worker accounts from Admin -> Manage Team.
+  await db.user.deleteMany({ where: { email: "admin@test.com" } });
 
   // Staff working hours (mirror shop; Cosimo off Wednesdays, Marco off Thursdays).
   for (const s of staff) {
@@ -455,8 +440,7 @@ async function main() {
   }
 
   console.log("✓ Seed complete.");
-  console.log(`  Owner login → ${ADMIN_EMAIL} / ${ADMIN_PASSWORD}`);
-  console.log(`  Test admin  → admin@test.com / Admin123!  (local demo only)`);
+  console.log(`  Owner login → ${ADMIN_EMAIL} (password: SEED_ADMIN_PASSWORD env, never logged)`);
 }
 
 main()

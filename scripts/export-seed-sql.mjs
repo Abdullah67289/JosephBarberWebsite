@@ -24,10 +24,29 @@ function q(v) {
   return "'" + String(v).replace(/'/g, "''") + "'";
 }
 
+// Account + transactional tables are NEVER exported: this file is committed to
+// a public repo, so no password hashes, sessions, customers or bookings may
+// appear in it. The owner account is created separately with
+// scripts/make-owner.mjs (whose output SQL is gitignored).
+const EXCLUDED = new Set([
+  "User",
+  "UserPermission",
+  "Customer",
+  "Booking",
+  "BookingAddon",
+  "BookingEvent",
+  "Order",
+  "OrderItem",
+  "ContactMessage",
+  "NotificationLog",
+  "AdminActionLog",
+]);
+
 const tables = db
   .prepare("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' AND name NOT LIKE '_prisma%'")
   .all()
-  .map((r) => r.name);
+  .map((r) => r.name)
+  .filter((name) => !EXCLUDED.has(name));
 
 const out = [
   "-- Auto-generated demo seed for Cloudflare D1. Do not edit by hand.",

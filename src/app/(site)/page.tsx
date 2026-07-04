@@ -124,7 +124,7 @@ export default async function HomePage() {
       />
 
       {visible("stats") && (
-        <section className="border-y border-border bg-card/30">
+        <section className="section-build border-y border-border bg-card/30">
           <div className="container grid grid-cols-2 gap-8 py-12 md:grid-cols-4">
             {displayStats.map((stat, i) => (
               <Reveal key={stat.label} delay={i * 0.08} className="text-center">
@@ -142,7 +142,7 @@ export default async function HomePage() {
       <CraftDetail photos={craftPhotos} />
 
       {visible("story") && (
-        <section className="section">
+        <section className="section section-build">
           <div className="container grid items-center gap-12 lg:grid-cols-2">
             <Reveal>
               <div className="relative">
@@ -191,7 +191,7 @@ export default async function HomePage() {
       )}
 
       {visible("services") && featuredServices.length > 0 && (
-        <section id="services" className="section border-t border-border bg-card/30">
+        <section id="services" className="section section-build border-t border-border bg-card/30">
           <div className="container">
             <SectionHeading
               eyebrow={section("services")?.eyebrow || "Services & Pricing"}
@@ -215,7 +215,7 @@ export default async function HomePage() {
       <FlowingMenuFeature />
 
       {visible("barbers") && featuredStaff.length > 0 && (
-        <section className="section">
+        <section className="section section-build">
           <div className="container">
             <SectionHeading
               eyebrow={section("barbers")?.eyebrow || "The Team"}
@@ -261,7 +261,7 @@ export default async function HomePage() {
       )}
 
       {visible("reviews") && testimonials.length > 0 && (
-        <section className="section">
+        <section className="section section-build">
           <div className="container">
             <SectionHeading
               eyebrow={section("reviews")?.eyebrow || "Reviews"}
@@ -276,7 +276,7 @@ export default async function HomePage() {
       )}
 
       {visible("products") && settings.showShopInNav && featuredProducts.length > 0 && (
-        <section className="section border-t border-border bg-card/30">
+        <section className="section section-build border-t border-border bg-card/30">
           <div className="container">
             <SectionHeading
               eyebrow={section("products")?.eyebrow || "The Shop"}
@@ -300,7 +300,7 @@ export default async function HomePage() {
       )}
 
       {visible("visit") && (
-        <section className="section">
+        <section className="section section-build">
           <div className="container grid gap-10 lg:grid-cols-2">
             <Reveal>
               <span className="eyebrow mb-3">{section("visit")?.eyebrow || "Visit Us"}</span>
@@ -349,7 +349,7 @@ export default async function HomePage() {
       )}
 
       {visible("cta") && (
-        <section className="relative overflow-hidden border-t border-border">
+        <section className="section-build relative overflow-hidden border-t border-border">
           <div className="absolute inset-0 -z-10 bg-radial-spot" aria-hidden />
           <div className="container py-20 text-center md:py-28">
             <Reveal>

@@ -38,3 +38,6 @@ yarn-error.log*
 /.open-next/
 /.wrangler/
 .dev.vars
+
+# Owner credentials bootstrap - NEVER commit
+/d1/owner-setup.sql
