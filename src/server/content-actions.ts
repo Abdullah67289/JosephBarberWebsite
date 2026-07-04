@@ -8,7 +8,7 @@ import { guard, actionOk, actionError, toActionError, type ActionResult } from "
 // ----------------------------------------------------------------- gallery
 
 export async function saveGalleryImage(raw: unknown): Promise<ActionResult> {
-  await guard("ADMIN");
+  await guard("manage_gallery");
   try {
     const { id, ...rest } = (raw ?? {}) as { id?: string };
     const data = galleryImageSchema.parse(rest);
@@ -24,7 +24,7 @@ export async function saveGalleryImage(raw: unknown): Promise<ActionResult> {
 }
 
 export async function deleteGalleryImage(id: string): Promise<ActionResult> {
-  await guard("ADMIN");
+  await guard("manage_gallery");
   try {
     await db.galleryImage.delete({ where: { id } });
     revalidatePath("/");
@@ -39,7 +39,7 @@ export async function deleteGalleryImage(id: string): Promise<ActionResult> {
 // ----------------------------------------------------------------- testimonials
 
 export async function saveTestimonial(raw: unknown): Promise<ActionResult> {
-  await guard("ADMIN");
+  await guard("manage_reviews");
   try {
     const { id, ...rest } = (raw ?? {}) as { id?: string };
     const data = testimonialSchema.parse(rest);
@@ -54,7 +54,7 @@ export async function saveTestimonial(raw: unknown): Promise<ActionResult> {
 }
 
 export async function deleteTestimonial(id: string): Promise<ActionResult> {
-  await guard("ADMIN");
+  await guard("manage_reviews");
   try {
     await db.testimonial.delete({ where: { id } });
     revalidatePath("/");
@@ -68,7 +68,7 @@ export async function deleteTestimonial(id: string): Promise<ActionResult> {
 // ----------------------------------------------------------------- messages
 
 export async function updateMessageStatus(id: string, status: string): Promise<ActionResult> {
-  await guard("ADMIN");
+  await guard("manage_messages");
   if (!["new", "read", "archived"].includes(status)) return actionError("Invalid status.");
   try {
     await db.contactMessage.update({ where: { id }, data: { status } });
@@ -80,7 +80,7 @@ export async function updateMessageStatus(id: string, status: string): Promise<A
 }
 
 export async function deleteMessage(id: string): Promise<ActionResult> {
-  await guard("ADMIN");
+  await guard("manage_messages");
   try {
     await db.contactMessage.delete({ where: { id } });
     revalidatePath("/admin/messages");

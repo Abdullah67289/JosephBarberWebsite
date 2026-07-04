@@ -1,4 +1,4 @@
-import { requireRole } from "@/lib/auth";
+import { requireOwner } from "@/lib/auth";
 import { getSettings } from "@/lib/settings";
 import { db } from "@/lib/db";
 import { env, isAdminSignupAllowed, isDevAdminBypassAllowed } from "@/lib/env";
@@ -9,7 +9,7 @@ import { SystemStatus } from "@/components/admin/system-status";
 export const dynamic = "force-dynamic";
 
 export default async function AdminSettingsPage() {
-  await requireRole("OWNER");
+  await requireOwner();
   const [settings, adminUsers] = await Promise.all([
     getSettings(),
     db.user.findMany({

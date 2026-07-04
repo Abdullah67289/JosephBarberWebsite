@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Download, Search } from "lucide-react";
 import type { Prisma } from "@prisma/client";
-import { requireAuth } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { getSettings } from "@/lib/settings";
 import { bookingInclude } from "@/lib/booking-service";
@@ -18,7 +18,7 @@ export default async function AdminBookingsPage({
 }: {
   searchParams: Promise<{ q?: string; status?: string; barber?: string; date?: string }>;
 }) {
-  const session = await requireAuth();
+  const session = await requirePermission("manage_bookings");
   const { q, status, barber, date } = await searchParams;
 
   const where: Prisma.BookingWhereInput = {};

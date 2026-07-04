@@ -4,12 +4,11 @@ import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { getSettings } from "@/lib/settings";
 import { settingsSchema } from "@/lib/validation";
-import { guard, actionOk, toActionError, logAdminAction, type ActionResult } from "./_helpers";
+import { guardOwner, actionOk, toActionError, logAdminAction, type ActionResult } from "./_helpers";
 
 export async function saveSettings(raw: unknown): Promise<ActionResult> {
-  // OWNER to match the settings page gate — an ADMIN could otherwise mutate
-  // business identity/booking rules by invoking the action directly.
-  const session = await guard("OWNER");
+  // Owner-only to match the settings page gate.
+  const session = await guardOwner();
   try {
     const current = await getSettings();
     const data = settingsSchema.parse({ ...current, ...(raw as Record<string, unknown>) });

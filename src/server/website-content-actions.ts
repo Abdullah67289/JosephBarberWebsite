@@ -20,7 +20,7 @@ function revalidatePublicContent() {
 }
 
 export async function saveNavigationLink(raw: unknown): Promise<ActionResult> {
-  const session = await guard("ADMIN");
+  const session = await guard("manage_content");
   try {
     const { id, ...rest } = (raw ?? {}) as { id?: string };
     const data = navigationLinkSchema.parse(rest);
@@ -36,7 +36,7 @@ export async function saveNavigationLink(raw: unknown): Promise<ActionResult> {
 }
 
 export async function deleteNavigationLink(id: string): Promise<ActionResult> {
-  const session = await guard("ADMIN");
+  const session = await guard("manage_content");
   try {
     await db.navigationLink.delete({ where: { id } });
     await logAdminAction({ actorEmail: session.email, actorRole: session.role, action: "delete", targetType: "NavigationLink", targetId: id });
@@ -48,7 +48,7 @@ export async function deleteNavigationLink(id: string): Promise<ActionResult> {
 }
 
 export async function savePageContent(raw: unknown): Promise<ActionResult> {
-  const session = await guard("ADMIN");
+  const session = await guard("manage_content");
   try {
     const { id, ...rest } = (raw ?? {}) as { id?: string };
     const data = pageContentSchema.parse(rest);
@@ -66,7 +66,7 @@ export async function savePageContent(raw: unknown): Promise<ActionResult> {
 }
 
 export async function saveHomeSection(raw: unknown): Promise<ActionResult> {
-  const session = await guard("ADMIN");
+  const session = await guard("manage_content");
   try {
     const data = homeSectionSchema.parse(raw);
     const row = await db.homeSection.upsert({
@@ -83,7 +83,7 @@ export async function saveHomeSection(raw: unknown): Promise<ActionResult> {
 }
 
 export async function saveSiteStat(raw: unknown): Promise<ActionResult> {
-  const session = await guard("ADMIN");
+  const session = await guard("manage_content");
   try {
     const { id, ...rest } = (raw ?? {}) as { id?: string };
     const data = siteStatSchema.parse(rest);
@@ -97,7 +97,7 @@ export async function saveSiteStat(raw: unknown): Promise<ActionResult> {
 }
 
 export async function deleteSiteStat(id: string): Promise<ActionResult> {
-  const session = await guard("ADMIN");
+  const session = await guard("manage_content");
   try {
     await db.siteStat.delete({ where: { id } });
     await logAdminAction({ actorEmail: session.email, actorRole: session.role, action: "delete", targetType: "SiteStat", targetId: id });
@@ -109,7 +109,7 @@ export async function deleteSiteStat(id: string): Promise<ActionResult> {
 }
 
 export async function saveFaqItem(raw: unknown): Promise<ActionResult> {
-  const session = await guard("ADMIN");
+  const session = await guard("manage_content");
   try {
     const { id, ...rest } = (raw ?? {}) as { id?: string };
     const data = faqItemSchema.parse(rest);
@@ -123,7 +123,7 @@ export async function saveFaqItem(raw: unknown): Promise<ActionResult> {
 }
 
 export async function deleteFaqItem(id: string): Promise<ActionResult> {
-  const session = await guard("ADMIN");
+  const session = await guard("manage_content");
   try {
     await db.faqItem.delete({ where: { id } });
     await logAdminAction({ actorEmail: session.email, actorRole: session.role, action: "delete", targetType: "FaqItem", targetId: id });
@@ -135,7 +135,7 @@ export async function deleteFaqItem(id: string): Promise<ActionResult> {
 }
 
 export async function savePolicyItem(raw: unknown): Promise<ActionResult> {
-  const session = await guard("ADMIN");
+  const session = await guard("manage_content");
   try {
     const data = policyItemSchema.parse(raw);
     const row = await db.policyItem.upsert({
@@ -152,7 +152,7 @@ export async function savePolicyItem(raw: unknown): Promise<ActionResult> {
 }
 
 export async function saveTimelineItem(raw: unknown): Promise<ActionResult> {
-  const session = await guard("ADMIN");
+  const session = await guard("manage_content");
   try {
     const { id, ...rest } = (raw ?? {}) as { id?: string };
     const data = timelineItemSchema.parse(rest);
@@ -166,7 +166,7 @@ export async function saveTimelineItem(raw: unknown): Promise<ActionResult> {
 }
 
 export async function deleteTimelineItem(id: string): Promise<ActionResult> {
-  const session = await guard("ADMIN");
+  const session = await guard("manage_content");
   try {
     await db.timelineItem.delete({ where: { id } });
     await logAdminAction({ actorEmail: session.email, actorRole: session.role, action: "delete", targetType: "TimelineItem", targetId: id });

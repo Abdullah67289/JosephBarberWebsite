@@ -37,8 +37,26 @@ model User {
   staffId      String?  @unique
   staff        Staff?   @relation(fields: [staffId], references: [id], onDelete: SetNull)
   lastLoginAt  DateTime?
+  // Per-account brute-force lockout (in addition to per-IP rate limiting).
+  failedLoginCount Int      @default(0)
+  lockedUntil      DateTime?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+
+  permissions  UserPermission[]
+}
+
+// Per-user permission grants. OWNER implicitly has every permission; workers
+// (ADMIN/BARBER) are limited to the keys granted here. Modelled as a join
+// table (not a bitmask/CSV) so grants are queryable and auditable.
+model UserPermission {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  key    String // e.g. manage_bookings, manage_services, manage_settings
+
+  @@unique([userId, key])
+  @@index([userId])
 }
 
 model Staff {

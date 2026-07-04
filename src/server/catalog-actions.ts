@@ -21,7 +21,7 @@ function revalidateCatalog() {
 // ----------------------------------------------------------------- services
 
 export async function saveService(raw: unknown): Promise<ActionResult> {
-  await guard("ADMIN");
+  await guard("manage_services");
   try {
     const { id, ...rest } = (raw ?? {}) as { id?: string };
     const data = serviceSchema.parse(rest);
@@ -47,7 +47,7 @@ export async function saveService(raw: unknown): Promise<ActionResult> {
 }
 
 export async function deleteService(id: string): Promise<ActionResult> {
-  await guard("ADMIN");
+  await guard("manage_services");
   try {
     await db.service.delete({ where: { id } });
     revalidateCatalog();
@@ -58,7 +58,7 @@ export async function deleteService(id: string): Promise<ActionResult> {
 }
 
 export async function saveServiceCategory(raw: unknown): Promise<ActionResult> {
-  await guard("ADMIN");
+  await guard("manage_services");
   try {
     const { id, ...rest } = (raw ?? {}) as { id?: string };
     const data = serviceCategorySchema.parse(rest);
@@ -73,7 +73,7 @@ export async function saveServiceCategory(raw: unknown): Promise<ActionResult> {
 }
 
 export async function deleteServiceCategory(id: string): Promise<ActionResult> {
-  await guard("ADMIN");
+  await guard("manage_services");
   try {
     await db.serviceCategory.delete({ where: { id } });
     revalidateCatalog();
@@ -84,7 +84,7 @@ export async function deleteServiceCategory(id: string): Promise<ActionResult> {
 }
 
 export async function saveServiceAddon(raw: unknown): Promise<ActionResult> {
-  await guard("ADMIN");
+  await guard("manage_services");
   try {
     const { id, ...rest } = (raw ?? {}) as { id?: string };
     const data = serviceAddonSchema.parse(rest);
@@ -98,7 +98,7 @@ export async function saveServiceAddon(raw: unknown): Promise<ActionResult> {
 }
 
 export async function deleteServiceAddon(id: string): Promise<ActionResult> {
-  await guard("ADMIN");
+  await guard("manage_services");
   try {
     await db.serviceAddon.delete({ where: { id } });
     revalidateCatalog();
@@ -111,7 +111,7 @@ export async function deleteServiceAddon(id: string): Promise<ActionResult> {
 // ----------------------------------------------------------------- staff
 
 export async function saveStaff(raw: unknown): Promise<ActionResult> {
-  await guard("ADMIN");
+  await guard("manage_staff");
   try {
     const { id, ...rest } = (raw ?? {}) as { id?: string };
     const data = staffSchema.parse(rest);
@@ -150,7 +150,7 @@ export async function saveStaff(raw: unknown): Promise<ActionResult> {
 }
 
 export async function deleteStaff(id: string): Promise<ActionResult> {
-  await guard("ADMIN");
+  await guard("manage_staff");
   try {
     await db.staff.delete({ where: { id } });
     revalidateCatalog();
@@ -163,7 +163,7 @@ export async function deleteStaff(id: string): Promise<ActionResult> {
 // ----------------------------------------------------------------- products
 
 export async function saveProduct(raw: unknown): Promise<ActionResult> {
-  await guard("ADMIN");
+  await guard("manage_shop");
   try {
     const { id, ...rest } = (raw ?? {}) as { id?: string };
     const data = productSchema.parse(rest);
@@ -191,7 +191,7 @@ export async function saveProduct(raw: unknown): Promise<ActionResult> {
 }
 
 export async function deleteProduct(id: string): Promise<ActionResult> {
-  await guard("ADMIN");
+  await guard("manage_shop");
   try {
     await db.product.delete({ where: { id } });
     revalidateCatalog();
@@ -202,7 +202,7 @@ export async function deleteProduct(id: string): Promise<ActionResult> {
 }
 
 export async function saveProductCategory(raw: unknown): Promise<ActionResult> {
-  await guard("ADMIN");
+  await guard("manage_shop");
   try {
     const { id, ...rest } = (raw ?? {}) as { id?: string };
     const data = productCategorySchema.parse(rest);
@@ -217,7 +217,7 @@ export async function saveProductCategory(raw: unknown): Promise<ActionResult> {
 }
 
 export async function deleteProductCategory(id: string): Promise<ActionResult> {
-  await guard("ADMIN");
+  await guard("manage_shop");
   try {
     await db.productCategory.delete({ where: { id } });
     revalidateCatalog();

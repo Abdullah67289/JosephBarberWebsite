@@ -1,11 +1,11 @@
-import { requireRole } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { ServicesManager } from "@/components/admin/services-manager";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminServicesPage() {
-  await requireRole("ADMIN");
+  await requirePermission("manage_services");
   const [services, categories, staff] = await Promise.all([
     db.service.findMany({
       orderBy: [{ displayOrder: "asc" }, { name: "asc" }],

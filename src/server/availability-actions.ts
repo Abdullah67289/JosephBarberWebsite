@@ -16,7 +16,7 @@ function revalidateAvailability() {
 }
 
 export async function saveBusinessHours(raw: unknown): Promise<ActionResult> {
-  await guard("ADMIN");
+  await guard("manage_schedule");
   try {
     const hours = businessHoursSchema.parse(raw);
     for (const h of hours) {
@@ -34,7 +34,7 @@ export async function saveBusinessHours(raw: unknown): Promise<ActionResult> {
 }
 
 export async function saveStaffHours(staffId: string, raw: unknown): Promise<ActionResult> {
-  await guard("ADMIN");
+  await guard("manage_schedule");
   try {
     const hours = staffHoursSchema.parse(raw);
     for (const h of hours) {
@@ -52,7 +52,7 @@ export async function saveStaffHours(staffId: string, raw: unknown): Promise<Act
 }
 
 export async function saveBreak(raw: unknown): Promise<ActionResult> {
-  await guard("ADMIN");
+  await guard("manage_schedule");
   try {
     const { id, ...rest } = (raw ?? {}) as { id?: string };
     const data = breakSchema.parse(rest);
@@ -67,7 +67,7 @@ export async function saveBreak(raw: unknown): Promise<ActionResult> {
 }
 
 export async function deleteBreak(id: string): Promise<ActionResult> {
-  await guard("ADMIN");
+  await guard("manage_schedule");
   try {
     await db.break.delete({ where: { id } });
     revalidateAvailability();
@@ -78,7 +78,7 @@ export async function deleteBreak(id: string): Promise<ActionResult> {
 }
 
 export async function saveClosure(raw: unknown): Promise<ActionResult> {
-  await guard("ADMIN");
+  await guard("manage_schedule");
   try {
     const { id, ...rest } = (raw ?? {}) as { id?: string };
     const data = closureSchema.parse(rest);
@@ -93,7 +93,7 @@ export async function saveClosure(raw: unknown): Promise<ActionResult> {
 }
 
 export async function deleteClosure(id: string): Promise<ActionResult> {
-  await guard("ADMIN");
+  await guard("manage_schedule");
   try {
     await db.closure.delete({ where: { id } });
     revalidateAvailability();
@@ -104,7 +104,7 @@ export async function deleteClosure(id: string): Promise<ActionResult> {
 }
 
 export async function saveSpecialHour(raw: unknown): Promise<ActionResult> {
-  await guard("ADMIN");
+  await guard("manage_schedule");
   try {
     const { id, ...rest } = (raw ?? {}) as { id?: string };
     const data = specialHourSchema.parse(rest);
@@ -125,7 +125,7 @@ export async function saveSpecialHour(raw: unknown): Promise<ActionResult> {
 }
 
 export async function deleteSpecialHour(id: string): Promise<ActionResult> {
-  await guard("ADMIN");
+  await guard("manage_schedule");
   try {
     await db.specialHour.delete({ where: { id } });
     revalidateAvailability();

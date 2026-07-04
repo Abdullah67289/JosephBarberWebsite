@@ -39,7 +39,7 @@ async function bookingBelongsToSession(bookingId: string, staffId: string | null
 }
 
 export async function adminCreateBooking(raw: unknown): Promise<ActionResult> {
-  const session = await guard("BARBER");
+  const session = await guard("manage_bookings");
   try {
     const data = adminBookingCreateSchema.parse(raw);
     if (session.role === "BARBER" && (!session.staffId || (data.staffId && data.staffId !== session.staffId))) {
@@ -67,7 +67,7 @@ export async function adminCreateBooking(raw: unknown): Promise<ActionResult> {
 }
 
 export async function adminSetBookingStatus(id: string, status: string): Promise<ActionResult> {
-  const session = await guard("BARBER");
+  const session = await guard("manage_bookings");
   if (!BOOKING_STATUSES.includes(status as never)) return actionError("Invalid status.");
   try {
     if (session.role === "BARBER" && !(await bookingBelongsToSession(id, session.staffId))) {
@@ -100,7 +100,7 @@ export async function adminRescheduleBooking(
   id: string,
   input: { date: string; startMinute: number; staffId?: string | null },
 ): Promise<ActionResult> {
-  const session = await guard("BARBER");
+  const session = await guard("manage_bookings");
   try {
     if (session.role === "BARBER") {
       if (!(await bookingBelongsToSession(id, session.staffId))) {
@@ -125,7 +125,7 @@ export async function adminRescheduleBooking(
 }
 
 export async function adminUpdateBooking(id: string, raw: unknown): Promise<ActionResult> {
-  const session = await guard("BARBER");
+  const session = await guard("manage_bookings");
   try {
     const data = adminBookingUpdateSchema.parse(raw);
     const current = await db.booking.findUnique({ where: { id }, include: { customer: true } });
@@ -177,7 +177,7 @@ export async function adminUpdateBooking(id: string, raw: unknown): Promise<Acti
 }
 
 export async function adminDeleteBooking(id: string): Promise<ActionResult> {
-  await guard("ADMIN");
+  await guard("manage_bookings");
   try {
     await db.booking.delete({ where: { id } });
     revalidateBookings();

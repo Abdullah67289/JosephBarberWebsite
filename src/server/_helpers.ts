@@ -1,5 +1,6 @@
 import { ZodError } from "zod";
-import { requireRole, type Role } from "@/lib/auth";
+import { requirePermission, requireOwner } from "@/lib/auth";
+import type { PermissionKey } from "@/lib/permissions";
 import { db } from "@/lib/db";
 import { fieldErrors } from "@/lib/validation";
 import { slugify } from "@/lib/utils";
@@ -11,9 +12,14 @@ export interface ActionResult<T = unknown> {
   data?: T;
 }
 
-/** Enforce a minimum role inside a server action. */
-export async function guard(min: Role = "ADMIN") {
-  return requireRole(min);
+/** Enforce a permission inside a server action (OWNER always passes). */
+export async function guard(permission: PermissionKey) {
+  return requirePermission(permission);
+}
+
+/** Enforce owner-only access (settings, team management). */
+export async function guardOwner() {
+  return requireOwner();
 }
 
 export async function logAdminAction(input: {

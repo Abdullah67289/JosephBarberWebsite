@@ -1,11 +1,11 @@
-import { requireRole } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { ProductsManager } from "@/components/admin/products-manager";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminProductsPage() {
-  await requireRole("ADMIN");
+  await requirePermission("manage_shop");
   const [products, categories] = await Promise.all([
     db.product.findMany({
       orderBy: [{ displayOrder: "asc" }, { name: "asc" }],

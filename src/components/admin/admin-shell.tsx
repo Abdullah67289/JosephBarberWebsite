@@ -15,6 +15,8 @@ import {
   Star,
   MessageSquare,
   Settings,
+  UserCog,
+  UserCircle,
   PanelsTopLeft,
   Menu,
   X,
@@ -22,56 +24,67 @@ import {
   ExternalLink,
 } from "lucide-react";
 import { logoutAction } from "@/server/auth-actions";
-import { roleAtLeast, type Role } from "@/lib/auth-jwt";
+import { type Role } from "@/lib/auth-jwt";
 import { cn } from "@/lib/utils";
 
-type NavItem = { href: string; label: string; icon: React.ComponentType<{ className?: string }>; min: Role };
+// `access`: a permission key gates the item by grant; "always" shows for every
+// signed-in user; "owner" shows only for the owner.
+type Access = string;
+type NavItem = { href: string; label: string; icon: React.ComponentType<{ className?: string }>; access: Access };
 type NavGroup = { heading?: string; items: NavItem[] };
 
 const NAV_GROUPS: NavGroup[] = [
   {
-    items: [{ href: "/admin", label: "Dashboard", icon: LayoutDashboard, min: "BARBER" }],
+    items: [{ href: "/admin", label: "Dashboard", icon: LayoutDashboard, access: "always" }],
   },
   {
     heading: "Operations",
     items: [
-      { href: "/admin/bookings", label: "Bookings", icon: CalendarDays, min: "BARBER" },
-      { href: "/admin/availability", label: "Schedule", icon: Clock, min: "ADMIN" },
-      { href: "/admin/staff", label: "Barbers", icon: Users, min: "ADMIN" },
-      { href: "/admin/services", label: "Services", icon: Scissors, min: "ADMIN" },
+      { href: "/admin/bookings", label: "Bookings", icon: CalendarDays, access: "manage_bookings" },
+      { href: "/admin/availability", label: "Schedule", icon: Clock, access: "manage_schedule" },
+      { href: "/admin/staff", label: "Barbers", icon: Users, access: "manage_staff" },
+      { href: "/admin/services", label: "Services", icon: Scissors, access: "manage_services" },
     ],
   },
   {
     heading: "Website",
     items: [
-      { href: "/admin/content", label: "Website Content", icon: PanelsTopLeft, min: "ADMIN" },
-      { href: "/admin/products", label: "Shop", icon: Package, min: "ADMIN" },
-      { href: "/admin/orders", label: "Orders", icon: ShoppingBag, min: "ADMIN" },
-      { href: "/admin/gallery", label: "Gallery", icon: ImageIcon, min: "ADMIN" },
-      { href: "/admin/reviews", label: "Reviews", icon: Star, min: "ADMIN" },
+      { href: "/admin/content", label: "Website Content", icon: PanelsTopLeft, access: "manage_content" },
+      { href: "/admin/products", label: "Shop", icon: Package, access: "manage_shop" },
+      { href: "/admin/orders", label: "Orders", icon: ShoppingBag, access: "manage_orders" },
+      { href: "/admin/gallery", label: "Gallery", icon: ImageIcon, access: "manage_gallery" },
+      { href: "/admin/reviews", label: "Reviews", icon: Star, access: "manage_reviews" },
     ],
   },
   {
     heading: "Inbox & system",
     items: [
-      { href: "/admin/messages", label: "Messages", icon: MessageSquare, min: "ADMIN" },
-      { href: "/admin/settings", label: "Settings", icon: Settings, min: "OWNER" },
+      { href: "/admin/messages", label: "Messages", icon: MessageSquare, access: "manage_messages" },
+      { href: "/admin/team", label: "Manage Team", icon: UserCog, access: "owner" },
+      { href: "/admin/settings", label: "Settings", icon: Settings, access: "owner" },
+      { href: "/admin/account", label: "My Account", icon: UserCircle, access: "always" },
     ],
   },
 ];
 
 export function AdminShell({
   session,
+  grants,
   children,
 }: {
   session: { name: string; email: string; role: Role; isDevBypass?: boolean };
+  grants: string[];
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = React.useState(false);
+  const isOwner = session.role === "OWNER" || Boolean(session.isDevBypass);
+  const grantSet = React.useMemo(() => new Set(grants), [grants]);
+  const canAccess = (access: Access) =>
+    access === "always" || (access === "owner" ? isOwner : isOwner || grantSet.has(access));
   const groups = NAV_GROUPS.map((g) => ({
     ...g,
-    items: g.items.filter((n) => roleAtLeast(session.role, n.min)),
+    items: g.items.filter((n) => canAccess(n.access)),
   })).filter((g) => g.items.length > 0);
 
   React.useEffect(() => setMobileOpen(false), [pathname]);

@@ -1,4 +1,4 @@
-import { requireRole } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { getSettings } from "@/lib/settings";
 import { ContentManager } from "@/components/admin/content-manager";
@@ -6,7 +6,7 @@ import { ContentManager } from "@/components/admin/content-manager";
 export const dynamic = "force-dynamic";
 
 export default async function AdminContentPage() {
-  await requireRole("ADMIN");
+  await requirePermission("manage_content");
   const [settings, navLinks, pages, sections, stats, faqs, policies, timeline] = await Promise.all([
     getSettings(),
     db.navigationLink.findMany({ orderBy: [{ area: "asc" }, { displayOrder: "asc" }], take: 60 }),

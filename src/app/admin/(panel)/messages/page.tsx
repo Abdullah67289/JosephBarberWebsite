@@ -1,11 +1,11 @@
-import { requireRole } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { MessagesManager } from "@/components/admin/messages-manager";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminMessagesPage() {
-  await requireRole("ADMIN");
+  await requirePermission("manage_messages");
   const rows = await db.contactMessage.findMany({ orderBy: { createdAt: "desc" }, take: 100 });
   return (
     <MessagesManager

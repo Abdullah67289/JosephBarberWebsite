@@ -1,11 +1,11 @@
-import { requireRole } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { AvailabilityManager } from "@/components/admin/availability-manager";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminAvailabilityPage() {
-  await requireRole("ADMIN");
+  await requirePermission("manage_schedule");
   const [businessHours, staff, staffHourRows, breaks, closures, specialHours] = await Promise.all([
     db.businessHour.findMany(),
     db.staff.findMany({ where: { isActive: true }, orderBy: { displayOrder: "asc" }, select: { id: true, name: true } }),

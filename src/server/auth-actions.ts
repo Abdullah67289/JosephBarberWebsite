@@ -31,8 +31,16 @@ export async function loginAction(_prev: LoginState, formData: FormData): Promis
   });
   if (!parsed.success) return { error: "Please enter a valid email and password." };
 
-  const user = await authenticate(parsed.data.email, parsed.data.password);
-  if (!user) return { error: "Invalid email or password." };
+  const result = await authenticate(parsed.data.email, parsed.data.password);
+  if (!result.ok) {
+    if (result.reason === "locked") {
+      return {
+        error: `Too many failed attempts. This account is locked for ${result.retryAfterMin} minute${result.retryAfterMin === 1 ? "" : "s"}.`,
+      };
+    }
+    return { error: "Invalid email or password." };
+  }
+  const user = result.user;
 
   await createSession({
     id: user.id,
