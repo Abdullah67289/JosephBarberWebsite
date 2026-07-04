@@ -8,9 +8,19 @@ CREATE TABLE "User" (
     "isActive" BOOLEAN NOT NULL DEFAULT true,
     "staffId" TEXT,
     "lastLoginAt" DATETIME,
+    "failedLoginCount" INTEGER NOT NULL DEFAULT 0,
+    "lockedUntil" DATETIME,
     "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" DATETIME NOT NULL,
     CONSTRAINT "User_staffId_fkey" FOREIGN KEY ("staffId") REFERENCES "Staff" ("id") ON DELETE SET NULL ON UPDATE CASCADE
+);
+
+-- CreateTable
+CREATE TABLE "UserPermission" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "userId" TEXT NOT NULL,
+    "key" TEXT NOT NULL,
+    CONSTRAINT "UserPermission_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User" ("id") ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 -- CreateTable
@@ -566,6 +576,12 @@ CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "User_staffId_key" ON "User"("staffId");
+
+-- CreateIndex
+CREATE INDEX "UserPermission_userId_idx" ON "UserPermission"("userId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "UserPermission_userId_key_key" ON "UserPermission"("userId", "key");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Staff_slug_key" ON "Staff"("slug");

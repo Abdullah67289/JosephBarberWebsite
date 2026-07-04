@@ -19,7 +19,10 @@
     "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
     "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
     "d1:migrate": "wrangler d1 migrations apply joseph-mikes-barbershop --remote",
-    "d1:migrate:local": "wrangler d1 migrations apply joseph-mikes-barbershop --local"
+    "d1:migrate:local": "wrangler d1 migrations apply joseph-mikes-barbershop --local",
+    "d1:export": "node scripts/export-seed-sql.mjs",
+    "d1:seed": "wrangler d1 execute joseph-mikes-barbershop --remote --file=d1/seed-data.sql",
+    "d1:seed:local": "wrangler d1 execute joseph-mikes-barbershop --local --file=d1/seed-data.sql"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
