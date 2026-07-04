@@ -14,7 +14,12 @@
     "db:push": "prisma db push",
     "db:seed": "tsx prisma/seed.ts",
     "db:reset": "prisma db push --force-reset && tsx prisma/seed.ts",
-    "setup": "prisma generate && prisma db push && tsx prisma/seed.ts"
+    "setup": "prisma generate && prisma db push && tsx prisma/seed.ts",
+    "cf:build": "opennextjs-cloudflare build",
+    "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
+    "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
+    "d1:migrate": "wrangler d1 migrations apply joseph-mikes-barbershop --remote",
+    "d1:migrate:local": "wrangler d1 migrations apply joseph-mikes-barbershop --local"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
@@ -23,6 +28,8 @@
     "postcss": "8.5.15"
   },
   "dependencies": {
+    "@opennextjs/cloudflare": "^1.20.1",
+    "@prisma/adapter-d1": "^5.22.0",
     "@prisma/client": "^5.22.0",
     "@radix-ui/react-dialog": "^1.1.4",
     "@radix-ui/react-dropdown-menu": "^2.1.4",
@@ -67,7 +74,8 @@
     "tailwindcss": "^3.4.17",
     "tailwindcss-animate": "^1.0.7",
     "tsx": "^4.19.2",
-    "typescript": "^5.7.2"
+    "typescript": "^5.7.2",
+    "wrangler": "^4.107.0"
   },
   "engines": {
     "node": ">=18.18.0"

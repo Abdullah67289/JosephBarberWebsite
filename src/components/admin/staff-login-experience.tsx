@@ -12,12 +12,14 @@ export function StaffLoginExperience({
   devBypassEnabled,
   showTestCreds,
   signupEnabled,
+  notice,
 }: {
   businessName: string;
   next?: string;
   devBypassEnabled: boolean;
   showTestCreds: boolean;
   signupEnabled: boolean;
+  notice?: string;
 }) {
   const [mood, setMood] = useState<LoginMood>("idle");
   const shouldReduceMotion = useReducedMotion();
@@ -160,6 +162,11 @@ export function StaffLoginExperience({
                 </motion.p>
               </div>
 
+              {notice && (
+                <p className="mb-4 rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive" role="alert">
+                  {notice}
+                </p>
+              )}
               <LoginForm
                 next={next}
                 devBypassEnabled={devBypassEnabled}

@@ -231,10 +231,22 @@ export function BookingWizard({
       });
       const json = await res.json();
       if (!res.ok || !json.ok) {
-        if (json.fields) setErrors(json.fields);
         toast.error(json.error ?? "Could not complete your booking.");
-        // If the slot was taken, bounce back to time selection.
-        if (json.code === "slot_taken" || json.code === "slot_unavailable") setStep(2);
+        if (json.fields) {
+          // Server-side validation failed: show the errors where the inputs
+          // live, otherwise the user is stuck on Confirm with no highlights.
+          setErrors(json.fields);
+          setStep(3);
+          return;
+        }
+        // If the slot was taken, drop the stale availability cache and the
+        // selected slot before bouncing back — otherwise the cached list
+        // re-selects the very slot that was just taken, looping the 409.
+        if (json.code === "slot_taken" || json.code === "slot_unavailable") {
+          availabilityCache.current.clear();
+          setSlot(null);
+          setStep(2);
+        }
         return;
       }
       setResult(json.data);
@@ -369,7 +381,13 @@ export function BookingWizard({
             </div>
           )}
           {step < 4 ? (
-            <Button onClick={() => canNext() ? setStep((s) => s + 1) : validateDetails(true)} disabled={!canNext()}>
+            // The details step stays clickable when invalid so the click can
+            // surface inline field errors (disabling it made that branch
+            // unreachable — users saw a dead button with zero feedback).
+            <Button
+              onClick={() => (canNext() ? setStep((s) => s + 1) : validateDetails(true))}
+              disabled={step !== 3 && !canNext()}
+            >
               Continue <ChevronRight className="h-4 w-4" />
             </Button>
           ) : (

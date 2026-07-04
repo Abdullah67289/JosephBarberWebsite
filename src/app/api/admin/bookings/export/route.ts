@@ -10,7 +10,10 @@ import { centsToDollars } from "@/lib/money";
 export const dynamic = "force-dynamic";
 
 function csvCell(v: string | number | null | undefined): string {
-  const s = String(v ?? "");
+  let s = String(v ?? "");
+  // Neutralize spreadsheet formula injection: customer-supplied values that
+  // start with = + - @ would otherwise execute when the CSV opens in Excel.
+  if (/^[=+\-@\t\r]/.test(s)) s = `'${s}`;
   return `"${s.replace(/"/g, '""')}"`;
 }
 

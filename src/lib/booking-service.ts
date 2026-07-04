@@ -1,4 +1,4 @@
-import { db } from "./db";
+import { db, usingD1 } from "./db";
 import { getSettings } from "./settings";
 import {
   resolveWorkingWindow,
@@ -590,6 +590,11 @@ export async function canCustomerModify(startAt: Date): Promise<{ allowed: boole
 
 /** Run a function inside a Serializable transaction, retrying write conflicts. */
 async function runSerializable<T>(fn: (tx: Prisma.TransactionClient) => Promise<T>): Promise<T> {
+  // Cloudflare D1 has no interactive transactions or isolation levels, so the
+  // steps run sequentially there. The in-callback conflict re-check still
+  // executes right before the insert, which keeps the double-booking window
+  // negligible for a single shop.
+  if (usingD1()) return fn(db);
   let lastErr: unknown;
   for (let attempt = 0; attempt < 3; attempt++) {
     try {

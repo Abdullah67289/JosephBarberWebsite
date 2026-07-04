@@ -1,4 +1,9 @@
 import path from "node:path";
+import { initOpenNextCloudflareForDev } from "@opennextjs/cloudflare";
+
+// Exposes Cloudflare bindings (D1, R2) during `next dev` via miniflare.
+// Costs nothing when the local run doesn't use bindings.
+initOpenNextCloudflareForDev();
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
@@ -6,6 +11,9 @@ const nextConfig = {
   poweredByHeader: false,
   outputFileTracingRoot: path.resolve(process.cwd()),
   images: {
+    // Cloudflare Workers has no built-in Next image optimizer; serve images
+    // as-is (the gallery assets are already web-sized).
+    unoptimized: true,
     remotePatterns: [
       { protocol: "https", hostname: "images.unsplash.com" },
       { protocol: "https", hostname: "img1.wsimg.com" },

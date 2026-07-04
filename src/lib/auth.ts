@@ -1,5 +1,4 @@
 import "server-only";
-import bcrypt from "bcryptjs";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { db } from "./db";
@@ -18,14 +17,9 @@ export type { Role, SessionPayload };
 export { roleAtLeast };
 
 // ----------------------------------------------------------------- passwords
-
-export async function hashPassword(password: string): Promise<string> {
-  return bcrypt.hash(password, 12);
-}
-
-export async function verifyPassword(password: string, hash: string): Promise<boolean> {
-  return bcrypt.compare(password, hash);
-}
+// WebCrypto PBKDF2 (Workers-safe); legacy bcrypt hashes verify + rehash on login.
+import { hashPassword, verifyPassword, needsRehash } from "./password";
+export { hashPassword, verifyPassword };
 
 // ----------------------------------------------------------------- session
 
@@ -111,7 +105,10 @@ export async function authenticate(email: string, password: string) {
   if (!adminEmailAllowed(user.email)) return null;
   const ok = await verifyPassword(password, user.passwordHash);
   if (!ok) return null;
-  await db.user.update({ where: { id: user.id }, data: { lastLoginAt: new Date() } });
+  const data: { lastLoginAt: Date; passwordHash?: string } = { lastLoginAt: new Date() };
+  // Transparently upgrade legacy bcrypt hashes to the current PBKDF2 scheme.
+  if (needsRehash(user.passwordHash)) data.passwordHash = await hashPassword(password);
+  await db.user.update({ where: { id: user.id }, data });
   return user;
 }
 

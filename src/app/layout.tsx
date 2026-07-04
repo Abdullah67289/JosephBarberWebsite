@@ -107,7 +107,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <script
           type="application/ld+json"
           // eslint-disable-next-line react/no-danger
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+          // "<" is escaped so admin-entered settings text can never close the
+          // script tag and inject markup (stored XSS via JSON-LD).
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }}
         />
         <span className="sr-only" aria-hidden>
           {fullAddress(s)}

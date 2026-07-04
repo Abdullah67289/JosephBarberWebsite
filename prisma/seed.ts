@@ -6,7 +6,7 @@
  * Use `npm run db:reset` to wipe and reseed from scratch.
  */
 import { PrismaClient } from "@prisma/client";
-import bcrypt from "bcryptjs";
+import { hashPassword } from "../src/lib/password";
 
 const db = new PrismaClient();
 
@@ -257,7 +257,7 @@ async function main() {
   const [joseph, cosimo, marco] = staff;
 
   // Owner user linked to Joseph.
-  const passwordHash = await bcrypt.hash(ADMIN_PASSWORD, 12);
+  const passwordHash = await hashPassword(ADMIN_PASSWORD);
   await db.user.upsert({
     where: { email: ADMIN_EMAIL },
     update: { passwordHash, role: "OWNER", isActive: true, staffId: joseph?.id },
@@ -270,21 +270,31 @@ async function main() {
     },
   });
 
-  // Local testing / demo admin. Always (re)provisioned so it definitely works.
-  // For local development only — change or remove before going to production.
+  // Local testing / demo admin. Publicly-known credentials, so it is NEVER
+  // provisioned in production unless SEED_TEST_ADMIN=true is set explicitly
+  // (e.g. for a throwaway public demo). Existing copies are deactivated.
   const TEST_ADMIN_EMAIL = "admin@test.com";
   const TEST_ADMIN_PASSWORD = "Admin123!";
-  const testHash = await bcrypt.hash(TEST_ADMIN_PASSWORD, 12);
-  await db.user.upsert({
-    where: { email: TEST_ADMIN_EMAIL },
-    update: { passwordHash: testHash, role: "OWNER", isActive: true },
-    create: {
-      email: TEST_ADMIN_EMAIL,
-      name: "Test Admin",
-      passwordHash: testHash,
-      role: "OWNER",
-    },
-  });
+  const allowTestAdmin =
+    process.env.NODE_ENV !== "production" || process.env.SEED_TEST_ADMIN === "true";
+  if (allowTestAdmin) {
+    const testHash = await hashPassword(TEST_ADMIN_PASSWORD);
+    await db.user.upsert({
+      where: { email: TEST_ADMIN_EMAIL },
+      update: { passwordHash: testHash, role: "OWNER", isActive: true },
+      create: {
+        email: TEST_ADMIN_EMAIL,
+        name: "Test Admin",
+        passwordHash: testHash,
+        role: "OWNER",
+      },
+    });
+  } else {
+    await db.user.updateMany({
+      where: { email: TEST_ADMIN_EMAIL },
+      data: { isActive: false },
+    });
+  }
 
   // Staff working hours (mirror shop; Cosimo off Wednesdays, Marco off Thursdays).
   for (const s of staff) {

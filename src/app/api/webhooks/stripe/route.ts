@@ -17,7 +17,8 @@ export async function POST(req: NextRequest) {
 
   let event;
   try {
-    event = stripe.webhooks.constructEvent(body, sig ?? "", env.stripe.webhookSecret);
+    // Async variant uses WebCrypto — required on Cloudflare Workers, works on Node.
+    event = await stripe.webhooks.constructEventAsync(body, sig ?? "", env.stripe.webhookSecret);
   } catch (err) {
     return new Response(`Webhook signature verification failed: ${String(err)}`, { status: 400 });
   }

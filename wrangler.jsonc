@@ -1,0 +1,37 @@
+{
+  // Cloudflare Workers config — deployed via `npm run deploy` (OpenNext).
+  // Docs: https://opennext.js.org/cloudflare
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "joseph-mikes-barbershop",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2026-04-01",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "joseph-mikes-barbershop",
+      // Replace with the real id from `wrangler d1 create joseph-mikes-barbershop`
+      "database_id": "REPLACE_WITH_D1_DATABASE_ID",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "UPLOADS",
+      "bucket_name": "joseph-mikes-barbershop-uploads"
+    }
+  ],
+  "vars": {
+    // Non-secret runtime vars. Secrets (AUTH_SECRET, STRIPE_*, RESEND_API_KEY,
+    // TWILIO_*) are set with `wrangler secret put <NAME>` — never here.
+    "NEXT_PUBLIC_SITE_URL": "https://joseph-mikes-barbershop.workers.dev",
+    "SHOP_TIMEZONE": "America/Toronto"
+  },
+  "observability": {
+    "enabled": true
+  }
+}

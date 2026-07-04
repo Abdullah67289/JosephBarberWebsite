@@ -7,7 +7,16 @@ import { StaffLoginExperience } from "@/components/admin/staff-login-experience"
 
 export const metadata: Metadata = { title: "Staff Login", robots: { index: false } };
 
-export default async function AdminLoginPage({ searchParams }: { searchParams: Promise<{ next?: string }> }) {
+const ERROR_NOTICES: Record<string, string> = {
+  "dev-bypass-disabled": "The development bypass is disabled on this site. Sign in with your account instead.",
+  forbidden: "You don't have permission to open that page.",
+};
+
+export default async function AdminLoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ next?: string; error?: string }>;
+}) {
   const sp = await searchParams;
   const session = await getSession();
   if (session) redirect(sp.next?.startsWith("/admin") ? sp.next : "/admin");
@@ -16,6 +25,7 @@ export default async function AdminLoginPage({ searchParams }: { searchParams: P
   const devBypassEnabled = isDevAdminBypassAllowed();
   const signupEnabled = isAdminSignupAllowed();
   const showTestCreds = !env.isProduction || isLocalSiteUrl();
+  const notice = sp.error ? ERROR_NOTICES[sp.error] : undefined;
 
   return (
     <StaffLoginExperience
@@ -24,6 +34,7 @@ export default async function AdminLoginPage({ searchParams }: { searchParams: P
       devBypassEnabled={devBypassEnabled}
       showTestCreds={showTestCreds}
       signupEnabled={signupEnabled}
+      notice={notice}
     />
   );
 }

@@ -21,6 +21,7 @@ export interface RateLimitResult {
 
 export function rateLimit(key: string, limit: number, windowMs: number): RateLimitResult {
   const now = Date.now();
+  evictStale(now);
   const bucket = store.get(key);
 
   if (!bucket || bucket.resetAt <= now) {
@@ -46,14 +47,14 @@ export function clientIp(headers: Headers): string {
   );
 }
 
-// Periodically evict stale buckets to bound memory.
-if (typeof setInterval !== "undefined") {
-  const timer = setInterval(() => {
-    const now = Date.now();
-    for (const [key, bucket] of store) {
-      if (bucket.resetAt <= now) store.delete(key);
-    }
-  }, 60_000);
-  // Don't keep the event loop alive solely for cleanup.
-  (timer as { unref?: () => void }).unref?.();
+// Lazily evict stale buckets to bound memory. A module-scope setInterval is
+// deliberately avoided: Cloudflare Workers throw on timers created in global
+// scope, which would 500 every route importing this module.
+let lastEviction = 0;
+function evictStale(now: number) {
+  if (now - lastEviction < 60_000) return;
+  lastEviction = now;
+  for (const [key, bucket] of store) {
+    if (bucket.resetAt <= now) store.delete(key);
+  }
 }

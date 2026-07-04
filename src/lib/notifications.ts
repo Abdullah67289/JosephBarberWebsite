@@ -90,9 +90,21 @@ export async function sendSms(opts: {
     return;
   }
   try {
-    const twilio = (await import("twilio")).default;
-    const client = twilio(env.sms.accountSid, env.sms.authToken);
-    await client.messages.create({ from: env.sms.from, to: opts.to, body: opts.body });
+    // Plain fetch to Twilio's REST API — the twilio Node SDK does not run on
+    // Cloudflare Workers, and this is the only call the app makes.
+    const sid = env.sms.accountSid;
+    const res = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${sid}/Messages.json`, {
+      method: "POST",
+      headers: {
+        Authorization: `Basic ${Buffer.from(`${sid}:${env.sms.authToken}`).toString("base64")}`,
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: new URLSearchParams({ From: env.sms.from, To: opts.to, Body: opts.body }),
+    });
+    if (!res.ok) {
+      const detail = await res.text().catch(() => "");
+      throw new Error(`Twilio ${res.status}: ${detail.slice(0, 300)}`);
+    }
     await record({ channel: "sms", to: opts.to, template: opts.template, body: opts.body, status: "sent", relatedType: opts.relatedType, relatedId: opts.relatedId });
   } catch (err) {
     await record({ channel: "sms", to: opts.to, template: opts.template, body: opts.body, status: "failed", error: String(err), relatedType: opts.relatedType, relatedId: opts.relatedId });

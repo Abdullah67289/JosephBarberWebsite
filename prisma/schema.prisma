@@ -14,11 +14,14 @@
 // -----------------------------------------------------------------------------
 
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  // driverAdapters lets the same client run against Cloudflare D1 (via
+  // @prisma/adapter-d1) in production and file SQLite locally.
+  previewFeatures = ["driverAdapters"]
 }
 
 datasource db {
-  provider = "sqlite" // ← change to "postgresql" for Supabase / production
+  provider = "sqlite" // file SQLite locally; Cloudflare D1 in production
   url      = env("DATABASE_URL")
 }
 

@@ -100,8 +100,15 @@ export function adminEmailAllowed(email: string): boolean {
 /** Throw at boot in production if critical secrets are still defaults. */
 export function assertProductionSecrets() {
   if (!env.isProduction) return;
-  if (isLocalSiteUrl()) return;
+  // Only an EXPLICIT localhost NEXT_PUBLIC_SITE_URL opts out of the check.
+  // The variable defaults to localhost, so an unset var in a real deployment
+  // must not silently allow the hardcoded dev AUTH_SECRET.
+  const explicitlyLocal = Boolean(process.env.NEXT_PUBLIC_SITE_URL?.trim()) && isLocalSiteUrl();
+  if (explicitlyLocal) return;
   if (env.authSecret.startsWith("dev-only")) {
-    throw new Error("AUTH_SECRET must be set to a strong value in production.");
+    throw new Error(
+      "AUTH_SECRET must be set to a strong value in production. " +
+        "(For a local production build, set NEXT_PUBLIC_SITE_URL=http://localhost:3000 explicitly.)",
+    );
   }
 }

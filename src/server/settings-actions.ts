@@ -7,7 +7,9 @@ import { settingsSchema } from "@/lib/validation";
 import { guard, actionOk, toActionError, logAdminAction, type ActionResult } from "./_helpers";
 
 export async function saveSettings(raw: unknown): Promise<ActionResult> {
-  const session = await guard("ADMIN");
+  // OWNER to match the settings page gate — an ADMIN could otherwise mutate
+  // business identity/booking rules by invoking the action directly.
+  const session = await guard("OWNER");
   try {
     const current = await getSettings();
     const data = settingsSchema.parse({ ...current, ...(raw as Record<string, unknown>) });

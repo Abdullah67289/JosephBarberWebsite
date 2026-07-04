@@ -19,6 +19,7 @@ import {
   PackagePlus,
 } from "lucide-react";
 import { db } from "@/lib/db";
+import { requireAuth } from "@/lib/auth";
 import { getSettings } from "@/lib/settings";
 import { todayKey, addDaysKey, localMinutesToUtc, formatInTz } from "@/lib/time";
 import { formatMoney } from "@/lib/money";
@@ -38,8 +39,17 @@ const QUICK_ACTIONS = [
   { href: "/admin/products", label: "Add product", icon: PackagePlus },
 ];
 
-export default async function AdminDashboard() {
-  const settings = await getSettings();
+export default async function AdminDashboard({
+  searchParams,
+}: {
+  searchParams?: Promise<{ error?: string }>;
+}) {
+  const [session, settings, sp] = await Promise.all([requireAuth(), getSettings(), searchParams ?? Promise.resolve({})]);
+  const forbidden = (sp as { error?: string }).error === "forbidden";
+  // Barbers get a dashboard scoped to their own chair — no shop-wide revenue,
+  // orders or message contents (those areas are ADMIN-gated elsewhere).
+  const isBarber = session.role === "BARBER";
+  const scope = isBarber ? { staffId: session.staffId ?? "__none" } : {};
   const tz = settings.timezone;
   const today = todayKey(tz);
   const weekEnd = addDaysKey(today, 7, tz);
@@ -62,18 +72,18 @@ export default async function AdminDashboard() {
     recentMessages,
   ] = await Promise.all([
     db.booking.findMany({
-      where: { date: today, status: { notIn: ["cancelled"] } },
+      where: { date: today, status: { notIn: ["cancelled"] }, ...scope },
       include: bookingInclude,
       orderBy: { startAt: "asc" },
     }),
-    db.booking.count({ where: { date: { gt: today, lte: weekEnd }, status: { in: ["confirmed", "pending"] } } }),
+    db.booking.count({ where: { date: { gt: today, lte: weekEnd }, status: { in: ["confirmed", "pending"] }, ...scope } }),
     db.booking.aggregate({
-      where: { date: { startsWith: monthPrefix }, status: { in: ["confirmed", "completed"] } },
+      where: { date: { startsWith: monthPrefix }, status: { in: ["confirmed", "completed"] }, ...scope },
       _sum: { priceCents: true },
     }),
     db.booking.groupBy({
       by: ["serviceId"],
-      where: { status: { in: ["confirmed", "completed"] } },
+      where: { status: { in: ["confirmed", "completed"] }, ...scope },
       _count: { serviceId: true },
       orderBy: { _count: { serviceId: "desc" } },
       take: 5,
@@ -83,13 +93,13 @@ export default async function AdminDashboard() {
       _sum: { totalCents: true },
       _count: { _all: true },
     }),
-    db.booking.count({ where: { status: "pending" } }),
-    db.booking.count({ where: { date: { startsWith: monthPrefix }, status: "cancelled" } }),
+    db.booking.count({ where: { status: "pending", ...scope } }),
+    db.booking.count({ where: { date: { startsWith: monthPrefix }, status: "cancelled", ...scope } }),
     db.staff.count({ where: { isActive: true } }),
     db.service.count({ where: { isActive: true } }),
     db.product.count({ where: { isActive: true } }),
     db.contactMessage.count({ where: { status: "new" } }),
-    db.booking.findMany({ orderBy: { createdAt: "desc" }, take: 6, include: bookingInclude }),
+    db.booking.findMany({ where: scope, orderBy: { createdAt: "desc" }, take: 6, include: bookingInclude }),
     db.contactMessage.findMany({ orderBy: { createdAt: "desc" }, take: 4 }),
   ]);
 
@@ -111,8 +121,16 @@ export default async function AdminDashboard() {
         </div>
       </div>
 
+      {/* Access-denied feedback (requireRole redirects here with ?error=forbidden) */}
+      {forbidden && (
+        <div className="flex items-center gap-2 rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
+          <XCircle className="h-4 w-4 shrink-0" />
+          You don&apos;t have permission to open that page. Ask the owner if you need access.
+        </div>
+      )}
+
       {/* Alerts */}
-      {(pendingCount > 0 || newMessages > 0) && (
+      {(pendingCount > 0 || (!isBarber && newMessages > 0)) && (
         <div className="grid gap-3 sm:grid-cols-2">
           {pendingCount > 0 && (
             <Link href="/admin/bookings?status=pending" className="flex items-center gap-2 rounded-lg border border-amber-500/30 bg-amber-500/5 p-3 text-sm text-amber-200 transition-colors hover:bg-amber-500/10">
@@ -121,7 +139,7 @@ export default async function AdminDashboard() {
               <ArrowRight className="ml-auto h-4 w-4" />
             </Link>
           )}
-          {newMessages > 0 && (
+          {!isBarber && newMessages > 0 && (
             <Link href="/admin/messages" className="flex items-center gap-2 rounded-lg border border-primary/30 bg-primary/5 p-3 text-sm text-gold-200 transition-colors hover:bg-primary/10">
               <MessageSquare className="h-4 w-4 shrink-0" />
               {newMessages} new message{newMessages > 1 ? "s" : ""} to read
@@ -135,7 +153,7 @@ export default async function AdminDashboard() {
       <div>
         <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Quick actions</p>
         <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-6">
-          {QUICK_ACTIONS.map((a) => (
+          {(isBarber ? QUICK_ACTIONS.filter((a) => a.href === "/admin/bookings") : QUICK_ACTIONS).map((a) => (
             <Link
               key={a.label}
               href={a.href}
@@ -152,14 +170,21 @@ export default async function AdminDashboard() {
 
       {/* Stat cards */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 [&>*]:min-w-0">
-        <StatCard label="Today's bookings" value={todayBookings.length} icon={CalendarDays} accent hint={`${upcomingCount} in the next 7 days`} />
+        <StatCard label={isBarber ? "Your bookings today" : "Today's bookings"} value={todayBookings.length} icon={CalendarDays} accent hint={`${upcomingCount} in the next 7 days`} />
         <StatCard label="Upcoming (7 days)" value={upcomingCount} icon={CalendarClock} hint="Confirmed & pending" />
-        <StatCard label="Revenue (month)" value={formatMoney(bookingRevenue + orderRevenue, settings.currency)} icon={DollarSign} hint="Bookings + paid orders" />
+        <StatCard
+          label={isBarber ? "Your revenue (month)" : "Revenue (month)"}
+          value={formatMoney(isBarber ? bookingRevenue : bookingRevenue + orderRevenue, settings.currency)}
+          icon={DollarSign}
+          hint={isBarber ? "Your confirmed bookings" : "Bookings + paid orders"}
+        />
         <StatCard label="Pending bookings" value={pendingCount} icon={AlertCircle} hint={`${cancelledCount} cancelled this month`} />
         <StatCard label="Active barbers" value={activeBarbers} icon={Users} hint="Shown in booking" />
         <StatCard label="Active services" value={activeServices} icon={Scissors} hint="Bookable now" />
-        <StatCard label="Products in shop" value={productsCount} icon={Package} hint={`${paidOrderRevenue._count._all} orders this month`} />
-        <StatCard label="New messages" value={newMessages} icon={MessageSquare} hint="Awaiting reply" />
+        {!isBarber && (
+          <StatCard label="Products in shop" value={productsCount} icon={Package} hint={`${paidOrderRevenue._count._all} orders this month`} />
+        )}
+        {!isBarber && <StatCard label="New messages" value={newMessages} icon={MessageSquare} hint="Awaiting reply" />}
       </div>
 
       {/* Today's schedule + popular services */}
@@ -250,6 +275,7 @@ export default async function AdminDashboard() {
           )}
         </div>
 
+        {!isBarber && (
         <div className="rounded-xl border border-border bg-card">
           <div className="flex items-center justify-between border-b border-border p-5">
             <h2 className="flex items-center gap-2 font-display text-lg font-semibold">
@@ -278,6 +304,7 @@ export default async function AdminDashboard() {
             </ul>
           )}
         </div>
+        )}
       </div>
 
       {cancelledCount > 0 && (

@@ -1,6 +1,7 @@
 import { type NextRequest } from "next/server";
+import type { Prisma } from "@prisma/client";
 import { checkoutSchema } from "@/lib/validation";
-import { db } from "@/lib/db";
+import { db, usingD1 } from "@/lib/db";
 import { getSettings } from "@/lib/settings";
 import { env } from "@/lib/env";
 import { effectivePriceCents } from "@/lib/money";
@@ -82,9 +83,11 @@ export async function POST(req: NextRequest) {
     const totalCents = subtotalCents + taxCents + shippingCents;
     const reference = generateOrderReference();
 
-    // Reserve stock + create the order atomically.
-    const order = await db.$transaction(
-      async (tx) => {
+    // Reserve stock + create the order atomically. On Cloudflare D1 there are
+    // no interactive transactions, so the steps run sequentially — the
+    // conditional stock decrements (stock >= qty guards) remain the real
+    // oversell protection either way.
+    const createOrder = async (tx: Prisma.TransactionClient) => {
         for (const line of lines) {
           const product = products.find((p) => p.id === line.productId)!;
           if (!product.trackInventory) continue;
@@ -137,9 +140,10 @@ export async function POST(req: NextRequest) {
           },
           include: { items: true },
         });
-      },
-      { isolationLevel: "Serializable" },
-    );
+    };
+    const order = usingD1()
+      ? await createOrder(db)
+      : await db.$transaction(createOrder, { isolationLevel: "Serializable" });
 
     const successUrl = `${env.siteUrl}/shop/order/${reference}`;
     const checkout = await createCheckoutSession({
