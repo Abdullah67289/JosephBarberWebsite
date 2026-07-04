@@ -79,7 +79,9 @@ interface Slot {
   availableStaffIds: string[];
 }
 
-const STEPS = ["Service", "Barber", "Date & Time", "Your Details", "Confirm"] as const;
+// Two-step flow: everything the customer *chooses* on step 1, everything we
+// *need from them* (when + contact) plus the live review on step 2.
+const STEPS = ["Service & Barber", "Time & Details"] as const;
 
 function dateToKey(d: Date): string {
   const y = d.getFullYear();
@@ -106,7 +108,7 @@ export function BookingWizard({
   const presetService = services.find((s) => s.slug === preselectServiceSlug);
   const presetBarber = staff.find((s) => s.slug === preselectBarberSlug);
 
-  const [step, setStep] = React.useState(presetService ? 1 : 0);
+  const [step, setStep] = React.useState(0);
   const [serviceId, setServiceId] = React.useState<string | null>(presetService?.id ?? null);
   const [addonIds, setAddonIds] = React.useState<string[]>([]);
   const [staffId, setStaffId] = React.useState<string>(presetBarber?.id ?? (settings.allowAnyBarber ? "any" : ""));
@@ -138,7 +140,7 @@ export function BookingWizard({
 
   // Fetch availability whenever the active time-step inputs change.
   React.useEffect(() => {
-    if (step !== 2) return;
+    if (step !== 1) return;
     if (!serviceId || !dateKey || (!settings.allowAnyBarber && !staffId)) {
       setSlots([]);
       return;
@@ -180,13 +182,8 @@ export function BookingWizard({
     return () => controller.abort();
   }, [step, serviceId, dateKey, staffId, addonIds, settings.allowAnyBarber]);
 
-  const canNext = () => {
-    if (step === 0) return !!serviceId;
-    if (step === 1) return settings.allowAnyBarber || !!staffId;
-    if (step === 2) return !!slot;
-    if (step === 3) return validateDetails(false);
-    return true;
-  };
+  // Step 1 gate: a service is chosen and a barber (or "any") is selected.
+  const canAdvance = !!serviceId && (settings.allowAnyBarber || !!staffId);
 
   function validateDetails(setState = true): boolean {
     const e: Record<string, string> = {};
@@ -205,10 +202,8 @@ export function BookingWizard({
 
   async function submit() {
     if (!service || !slot || !dateKey) return;
-    if (!validateDetails(true)) {
-      setStep(3);
-      return;
-    }
+    // Details live on step 1 already; just surface any inline errors.
+    if (!validateDetails(true)) return;
     setSubmitting(true);
     setErrors({});
     try {
@@ -233,19 +228,16 @@ export function BookingWizard({
       if (!res.ok || !json.ok) {
         toast.error(json.error ?? "Could not complete your booking.");
         if (json.fields) {
-          // Server-side validation failed: show the errors where the inputs
-          // live, otherwise the user is stuck on Confirm with no highlights.
+          // Field errors render inline on this same step.
           setErrors(json.fields);
-          setStep(3);
           return;
         }
         // If the slot was taken, drop the stale availability cache and the
-        // selected slot before bouncing back — otherwise the cached list
-        // re-selects the very slot that was just taken, looping the 409.
+        // selected slot — otherwise the cached list re-selects the very slot
+        // that was just taken, looping the 409. Stay on step 1 (the calendar).
         if (json.code === "slot_taken" || json.code === "slot_unavailable") {
           availabilityCache.current.clear();
           setSlot(null);
-          setStep(2);
         }
         return;
       }
@@ -307,63 +299,70 @@ export function BookingWizard({
         )}
         <div key={step} className="animate-in fade-in slide-in-from-right-2 duration-200 motion-reduce:animate-none">
             {step === 0 && (
-              <ServiceStep
-                services={services}
-                serviceId={serviceId}
-                addonIds={addonIds}
-                onSelectService={(id) => {
-                  setServiceId(id);
-                  setAddonIds([]);
-                  // Reset barber if it can't perform the new service.
-                  const svc = services.find((s) => s.id === id);
-                  if (svc && (staffId === "any" ? !settings.allowAnyBarber : !svc.staffIds.includes(staffId))) {
-                    setStaffId(settings.allowAnyBarber ? "any" : staff.find((s) => svc.staffIds.includes(s.id))?.id ?? "");
+              <div className="space-y-8">
+                <ServiceStep
+                  services={services}
+                  serviceId={serviceId}
+                  addonIds={addonIds}
+                  onSelectService={(id) => {
+                    setServiceId(id);
+                    setAddonIds([]);
+                    // Reset barber if it can't perform the new service.
+                    const svc = services.find((s) => s.id === id);
+                    if (svc && (staffId === "any" ? !settings.allowAnyBarber : !svc.staffIds.includes(staffId))) {
+                      setStaffId(settings.allowAnyBarber ? "any" : staff.find((s) => svc.staffIds.includes(s.id))?.id ?? "");
+                    }
+                  }}
+                  onToggleAddon={(id) =>
+                    setAddonIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]))
                   }
-                }}
-                onToggleAddon={(id) =>
-                  setAddonIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]))
-                }
-                currency={settings.currency}
-              />
+                  currency={settings.currency}
+                />
+                <div className="border-t border-border pt-7">
+                  <BarberStep
+                    staff={eligibleStaff}
+                    staffId={staffId}
+                    onSelect={setStaffId}
+                    allowAnyBarber={settings.allowAnyBarber}
+                    disabled={!serviceId}
+                  />
+                </div>
+              </div>
             )}
             {step === 1 && (
-              <BarberStep
-                staff={eligibleStaff}
-                staffId={staffId}
-                onSelect={setStaffId}
-                allowAnyBarber={settings.allowAnyBarber}
-              />
-            )}
-            {step === 2 && (
-              <TimeStep
-                date={date}
-                setDate={(d) => {
-                  setDate(d);
-                  setSlot(null);
-                }}
-                slots={slots}
-                slot={slot}
-                setSlot={setSlot}
-                loading={loadingSlots}
-                maxAdvanceDays={settings.maxAdvanceDays}
-                totalDuration={totalDuration}
-              />
-            )}
-            {step === 3 && (
-              <DetailsStep customer={customer} setCustomer={setCustomer} errors={errors} settings={settings} />
-            )}
-            {step === 4 && service && (
-              <ConfirmStep
-                service={service}
-                addons={selectedAddons}
-                staffName={staffId === "any" ? "Any available barber" : staff.find((s) => s.id === staffId)?.name}
-                date={date!}
-                slot={slot!}
-                totalPrice={totalPrice}
-                totalDuration={totalDuration}
-                customer={customer}
-                settings={settings}
-              />
+              <div className="space-y-8">
+                <TimeStep
+                  date={date}
+                  setDate={(d) => {
+                    setDate(d);
+                    setSlot(null);
+                  }}
+                  slots={slots}
+                  slot={slot}
+                  setSlot={setSlot}
+                  loading={loadingSlots}
+                  maxAdvanceDays={settings.maxAdvanceDays}
+                  totalDuration={totalDuration}
+                />
+                <div className="border-t border-border pt-7">
+                  <DetailsStep customer={customer} setCustomer={setCustomer} errors={errors} settings={settings} />
+                </div>
+                {service && slot && date && (
+                  <div className="border-t border-border pt-7">
+                    <ConfirmStep
+                      service={service}
+                      addons={selectedAddons}
+                      staffName={staffId === "any" ? "Any available barber" : staff.find((s) => s.id === staffId)?.name}
+                      date={date}
+                      slot={slot}
+                      totalPrice={totalPrice}
+                      totalDuration={totalDuration}
+                      customer={customer}
+                      settings={settings}
+                    />
+                  </div>
+                )}
+              </div>
             )}
         </div>
 
@@ -380,18 +379,12 @@ export function BookingWizard({
               <span className="text-muted-foreground"> · {totalDuration} min</span>
             </div>
           )}
-          {step < 4 ? (
-            // The details step stays clickable when invalid so the click can
-            // surface inline field errors (disabling it made that branch
-            // unreachable — users saw a dead button with zero feedback).
-            <Button
-              onClick={() => (canNext() ? setStep((s) => s + 1) : validateDetails(true))}
-              disabled={step !== 3 && !canNext()}
-            >
+          {step === 0 ? (
+            <Button onClick={() => canAdvance && setStep(1)} disabled={!canAdvance}>
               Continue <ChevronRight className="h-4 w-4" />
             </Button>
           ) : (
-            <Button onClick={submit} loading={submitting}>
+            <Button onClick={submit} loading={submitting} disabled={!slot}>
               Confirm Booking <Check className="h-4 w-4" />
             </Button>
           )}
@@ -488,18 +481,26 @@ function BarberStep({
   staffId,
   onSelect,
   allowAnyBarber,
+  disabled,
 }: {
   staff: WizardStaff[];
   staffId: string;
   onSelect: (id: string) => void;
   allowAnyBarber: boolean;
+  disabled?: boolean;
 }) {
   return (
-    <div>
+    <div className={cn(disabled && "pointer-events-none opacity-50")} aria-disabled={disabled}>
       <StepTitle
         icon={User}
         title="Pick your barber"
-        subtitle={allowAnyBarber ? "Choose a specific barber or let us match you with the first available." : "Choose the barber you would like to book."}
+        subtitle={
+          disabled
+            ? "Choose a service above first."
+            : allowAnyBarber
+              ? "Choose a specific barber or let us match you with the first available."
+              : "Choose the barber you would like to book."
+        }
       />
       <div className="grid gap-2.5 sm:grid-cols-2">
         {allowAnyBarber && (

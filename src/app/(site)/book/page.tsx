@@ -26,7 +26,9 @@ export default async function BookPage({
       subtitle: "Real-time availability. Choose your service, barber and time - confirmed instantly.",
     }),
     db.service.findMany({
-      where: { isActive: true, isBookable: true },
+      // Only offer services that at least one barber can actually perform,
+      // otherwise the barber picker / calendar dead-ends with no availability.
+      where: { isActive: true, isBookable: true, staff: { some: {} } },
       orderBy: [{ displayOrder: "asc" }, { name: "asc" }],
       select: {
         id: true,
