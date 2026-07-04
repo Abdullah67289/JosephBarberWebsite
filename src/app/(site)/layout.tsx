@@ -1,5 +1,6 @@
 import { Navbar } from "@/components/site/navbar";
 import { Footer } from "@/components/site/footer";
+import { SiteIntro } from "@/components/site/site-intro";
 import GradualBlur from "@/components/animations/GradualBlur";
 import { getSettings } from "@/lib/settings";
 import { getNavigationLinks } from "@/lib/queries";
@@ -26,6 +27,7 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
   }));
   return (
     <div className="theme-cream flex min-h-screen flex-col bg-background text-foreground">
+      <SiteIntro businessName={s.businessName} />
       <Navbar
         businessName={s.businessName}
         phone={s.phone}
