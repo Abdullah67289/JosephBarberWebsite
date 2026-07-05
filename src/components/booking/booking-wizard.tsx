@@ -90,6 +90,24 @@ function dateToKey(d: Date): string {
   return `${y}-${m}-${day}`;
 }
 
+/**
+ * "Today" as the SHOP sees it, expressed as a browser-local midnight Date for
+ * the calendar. Using the browser clock directly lets visitors in other
+ * timezones pick dates the server (which validates in shop time) considers
+ * past or out of range — they'd see an unexplained "No availability".
+ */
+function shopToday(timeZone: string): Date {
+  try {
+    const key = new Intl.DateTimeFormat("en-CA", { timeZone }).format(new Date()); // YYYY-MM-DD
+    const [y, m, d] = key.split("-").map(Number);
+    return new Date(y!, (m ?? 1) - 1, d ?? 1);
+  } catch {
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+    return now;
+  }
+}
+
 // ----------------------------------------------------------------- component
 
 export function BookingWizard({
@@ -343,6 +361,7 @@ export function BookingWizard({
                   loading={loadingSlots}
                   maxAdvanceDays={settings.maxAdvanceDays}
                   totalDuration={totalDuration}
+                  timezone={settings.timezone}
                 />
                 <div className="border-t border-border pt-7">
                   <DetailsStep customer={customer} setCustomer={setCustomer} errors={errors} settings={settings} />
@@ -563,6 +582,7 @@ function TimeStep({
   loading,
   maxAdvanceDays,
   totalDuration,
+  timezone,
 }: {
   date: Date | undefined;
   setDate: (d: Date | undefined) => void;
@@ -572,9 +592,9 @@ function TimeStep({
   loading: boolean;
   maxAdvanceDays: number;
   totalDuration: number;
+  timezone: string;
 }) {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const today = shopToday(timezone);
   const max = new Date(today);
   max.setDate(max.getDate() + maxAdvanceDays);
 

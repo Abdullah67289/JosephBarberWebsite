@@ -26,7 +26,7 @@ export default async function FaqPage() {
   return (
     <>
       <PageHeader eyebrow={page.eyebrow ?? "FAQ & Policies"} title={page.title} description={page.subtitle ?? undefined} />
-      <section className="section">
+      <section className="section section-build">
         <div className="container grid gap-10 lg:grid-cols-[1.1fr_0.9fr]">
           <div>
             <Reveal as="div">

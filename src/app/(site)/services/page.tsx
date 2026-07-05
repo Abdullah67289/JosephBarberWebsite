@@ -39,7 +39,7 @@ export default async function ServicesPage() {
         </Button>
       </PageHeader>
 
-      <section className="section">
+      <section className="section section-build">
         <div className="container space-y-16">
           {categories.map((cat) => (
             <div key={cat.id}>

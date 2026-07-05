@@ -55,7 +55,7 @@ export default async function ShopPage() {
   return (
     <>
       <PageHeader eyebrow={page.eyebrow ?? "The Shop"} title={page.title} description={page.subtitle ?? undefined} />
-      <section className="section">
+      <section className="section section-build">
         <div className="container">
           {shopProducts.length === 0 ? (
             <EmptyState icon={PackageOpen} title="Shop coming soon" description="We're stocking the shelves. Check back shortly." />

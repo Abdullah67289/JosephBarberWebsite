@@ -85,7 +85,7 @@ export default async function StoryPage() {
     <>
       <PageHeader eyebrow={page.eyebrow ?? "Since 1966"} title={page.title || settings.aboutTitle || "Our Story"} description={page.subtitle ?? undefined} />
 
-      <section className="section">
+      <section className="section section-build">
         <div className="container grid items-center gap-12 lg:grid-cols-2">
           <Reveal>
             <div className="premium-card premium-image relative aspect-[4/5]">
@@ -121,7 +121,7 @@ export default async function StoryPage() {
       </section>
 
       {experienceCards.length > 0 && (
-        <section className="section border-t border-border">
+        <section className="section section-build border-t border-border">
           <div className="container grid items-center gap-12 lg:grid-cols-2">
             <Reveal>
               <SectionHeading align="left" eyebrow="The Experience" title="A chair you'll look forward to" />
@@ -144,7 +144,7 @@ export default async function StoryPage() {
       )}
 
       {timeline.length > 0 && (
-        <section className="section border-y border-border bg-card/30">
+        <section className="section section-build border-y border-border bg-card/30">
           <div className="container">
             <SectionHeading eyebrow="History" title="Milestones" />
             <div className="mt-10 grid gap-4 md:grid-cols-3">
@@ -160,7 +160,7 @@ export default async function StoryPage() {
         </section>
       )}
 
-      <section className="section">
+      <section className="section section-build">
         <div className="container">
           <SectionHeading
             eyebrow="Why Joseph & Mike's"
@@ -175,7 +175,7 @@ export default async function StoryPage() {
         </div>
       </section>
 
-      <section className="border-y border-border bg-card/30">
+      <section className="section-build border-y border-border bg-card/30">
         <div className="container grid grid-cols-3 gap-8 py-14 text-center">
           {[
             { value: 58, suffix: "+", label: "Years serving Milton" },
@@ -193,7 +193,7 @@ export default async function StoryPage() {
       </section>
 
       {storyTestimonials.length > 0 && (
-        <section className="section">
+        <section className="section section-build">
           <div className="container grid items-center gap-12 lg:grid-cols-2">
             <Reveal>
               <SectionHeading
@@ -216,7 +216,7 @@ export default async function StoryPage() {
       )}
 
       {staff.length > 0 && (
-        <section className="section">
+        <section className="section section-build">
           <div className="container">
             <SectionHeading eyebrow="The Family" title="The people behind the chairs" />
             <Stagger className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">

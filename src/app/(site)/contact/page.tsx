@@ -39,7 +39,7 @@ export default async function ContactPage() {
     <>
       <PageHeader eyebrow={page.eyebrow ?? "Get in Touch"} title={page.title} description={page.subtitle ?? undefined} />
 
-      <section className="section">
+      <section className="section section-build">
         <div className="container grid gap-10 lg:grid-cols-2">
           <Reveal className="space-y-6">
             <div className="grid gap-4 sm:grid-cols-2">

@@ -1,6 +1,6 @@
 import { type NextRequest } from "next/server";
 import type { Prisma } from "@prisma/client";
-import { getSession, roleAtLeast } from "@/lib/auth";
+import { getSession, sessionHasPermission } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { getSettings } from "@/lib/settings";
 import { bookingInclude } from "@/lib/booking-service";
@@ -20,7 +20,10 @@ function csvCell(v: string | number | null | undefined): string {
 export async function GET(req: NextRequest) {
   const session = await getSession();
   if (!session) return new Response("Unauthorized", { status: 401 });
-  if (!roleAtLeast(session.role, "ADMIN")) return new Response("Forbidden", { status: 403 });
+  // Same gate as the bookings page; barbers are scoped to their own chair.
+  if (!(await sessionHasPermission(session, "manage_bookings"))) {
+    return new Response("Forbidden", { status: 403 });
+  }
 
   const sp = req.nextUrl.searchParams;
   const where: Prisma.BookingWhereInput = {};
@@ -29,7 +32,8 @@ export async function GET(req: NextRequest) {
   const date = sp.get("date");
   const q = sp.get("q");
   if (status && status !== "all") where.status = status;
-  if (barber && barber !== "all") where.staffId = barber;
+  if (session.role === "BARBER") where.staffId = session.staffId ?? "__none";
+  else if (barber && barber !== "all") where.staffId = barber;
   if (date) where.date = date;
   if (q) {
     where.OR = [

@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { getCloudflareContext } from "@opennextjs/cloudflare";
-import { requireRole } from "@/lib/auth";
+import { getSession, sessionHasAnyPermission } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { env } from "@/lib/env";
 
@@ -36,7 +36,17 @@ function cleanFilename(name: string) {
 }
 
 export async function POST(req: NextRequest) {
-  const session = await requireRole("ADMIN");
+  // Media uploads serve the gallery/content/shop/staff managers, so any of
+  // those grants unlocks it — role rank alone no longer decides admin access.
+  const session = await getSession();
+  if (!session) return Response.json({ ok: false, error: "Unauthorized" }, { status: 401 });
+  const allowed = await sessionHasAnyPermission(session, [
+    "manage_gallery",
+    "manage_content",
+    "manage_shop",
+    "manage_staff",
+  ]);
+  if (!allowed) return Response.json({ ok: false, error: "Forbidden" }, { status: 403 });
   const form = await req.formData();
   const file = form.get("file");
   if (!(file instanceof File)) {

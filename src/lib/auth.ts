@@ -125,6 +125,19 @@ export async function requirePermission(key: PermissionKey): Promise<SessionPayl
   return session;
 }
 
+/** True if the session holds ANY of the given permissions (owner always does). */
+export async function sessionHasAnyPermission(
+  session: SessionPayload,
+  keys: PermissionKey[],
+): Promise<boolean> {
+  if (session.role === "OWNER" || session.isDevBypass) return true;
+  const grant = await db.userPermission.findFirst({
+    where: { userId: session.sub, key: { in: keys } },
+    select: { id: true },
+  });
+  return Boolean(grant);
+}
+
 /** The set of permission keys this session can access (all keys for owners). */
 export async function loadGrants(session: SessionPayload): Promise<Set<PermissionKey>> {
   if (session.role === "OWNER" || session.isDevBypass) return new Set(PERMISSION_KEYS);
