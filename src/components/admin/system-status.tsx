@@ -36,11 +36,11 @@ export function SystemStatus({ data }: { data: SystemStatusData }) {
   return (
     <div className="mb-8 space-y-4">
       {warnings.length > 0 && (
-        <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-4">
-          <p className="mb-2 flex items-center gap-2 text-sm font-semibold text-amber-200">
+        <div className="rounded-xl border border-amber-500/40 bg-amber-500/10 p-4">
+          <p className="mb-2 flex items-center gap-2 text-sm font-semibold text-amber-700 dark:text-amber-200">
             <ShieldAlert className="h-4 w-4" /> Security checklist (local testing)
           </p>
-          <ul className="list-disc space-y-1 pl-5 text-xs text-amber-100/90">
+          <ul className="list-disc space-y-1 pl-5 text-xs text-amber-800/90 dark:text-amber-100/90">
             {warnings.map((w) => (
               <li key={w}>{w}</li>
             ))}

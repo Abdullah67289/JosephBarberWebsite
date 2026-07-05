@@ -27,12 +27,18 @@ import {
 } from "lucide-react";
 import { logoutAction } from "@/server/auth-actions";
 import { type Role } from "@/lib/auth-jwt";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { cn } from "@/lib/utils";
 
 // `access`: a permission key gates the item by grant; "always" shows for every
 // signed-in user; "owner" shows only for the owner.
 type Access = string;
-type NavItem = { href: string; label: string; icon: React.ComponentType<{ className?: string }>; access: Access };
+type NavItem = {
+  href: string;
+  label: string;
+  icon: React.ComponentType<{ className?: string; strokeWidth?: string | number }>;
+  access: Access;
+};
 type NavGroup = { heading?: string; items: NavItem[] };
 
 const NAV_GROUPS: NavGroup[] = [
@@ -98,11 +104,11 @@ export function AdminShell({
   const currentLabel = NAV_GROUPS.flatMap((g) => g.items).find((i) => isActive(i.href))?.label ?? "Dashboard";
 
   const NavList = () => (
-    <nav className="flex flex-col gap-5">
+    <nav className="flex flex-col gap-6">
       {groups.map((group, gi) => (
-        <div key={group.heading ?? gi} className="flex flex-col gap-1">
+        <div key={group.heading ?? gi} className="flex flex-col gap-0.5">
           {group.heading && (
-            <p className="px-3 pb-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground/70">
+            <p className="px-3 pb-1.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground/70">
               {group.heading}
             </p>
           )}
@@ -110,14 +116,15 @@ export function AdminShell({
             <Link
               key={item.href}
               href={item.href}
+              aria-current={isActive(item.href) ? "page" : undefined}
               className={cn(
-                "relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200 hover:-translate-y-0.5",
+                "relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors duration-150",
                 isActive(item.href)
-                  ? "bg-primary/[0.12] text-primary shadow-[inset_3px_0_0_hsl(var(--primary)),0_16px_44px_-32px_hsl(var(--primary)/0.9)]"
-                  : "text-muted-foreground hover:bg-secondary/75 hover:text-foreground",
+                  ? "font-semibold text-primary before:absolute before:inset-y-1.5 before:left-0 before:w-0.5 before:rounded-full before:bg-primary"
+                  : "font-medium text-muted-foreground hover:bg-secondary/60 hover:text-foreground",
               )}
             >
-              <item.icon className="h-[18px] w-[18px]" />
+              <item.icon className="h-[17px] w-[17px]" strokeWidth={isActive(item.href) ? 2.2 : 1.8} />
               {item.label}
             </Link>
           ))}
@@ -127,81 +134,98 @@ export function AdminShell({
   );
 
   return (
-    <div className="min-h-screen bg-background p-0 lg:bg-[radial-gradient(circle_at_16%_0%,hsl(var(--primary)/0.13),transparent_28%),radial-gradient(circle_at_82%_12%,hsl(0_0%_100%/0.055),transparent_24%),hsl(var(--background))] lg:p-4">
-      {/* Desktop sidebar */}
-      <div className="min-h-screen lg:grid lg:min-h-[calc(100vh-2rem)] lg:grid-cols-[280px_1fr] lg:gap-4">
-      <aside className="hidden overflow-hidden border border-border bg-card/95 shadow-[0_26px_90px_-54px_rgb(0_0_0/0.95)] backdrop-blur-xl lg:flex lg:flex-col lg:rounded-[1.5rem]">
-        <div className="flex h-20 items-center gap-2.5 border-b border-border px-5">
-          <span className="relative grid h-8 w-8 place-items-center overflow-hidden rounded-md border border-primary/40">
-            <span className="absolute inset-0 barber-pole opacity-80" aria-hidden />
-            <span className="relative z-10 font-display text-xs font-bold text-background">JM</span>
-          </span>
-          <div>
-            <span className="block font-display text-sm font-bold leading-tight">Joseph &amp; Mike&apos;s</span>
-            <span className="text-[10px] uppercase tracking-[0.2em] text-primary">Control panel</span>
+    <div className="theme-cream min-h-screen bg-background text-foreground">
+      <div className="min-h-screen lg:grid lg:grid-cols-[264px_1fr]">
+        {/* Desktop sidebar — a quiet rail, separated by a single hairline. */}
+        <aside className="hidden border-r border-border bg-card/60 lg:flex lg:flex-col">
+          <div className="flex h-20 items-center gap-2.5 px-6">
+            <span className="relative grid h-8 w-8 place-items-center overflow-hidden rounded-md border border-primary/40">
+              <span className="absolute inset-0 barber-pole opacity-80" aria-hidden />
+              <span className="relative z-10 font-display text-xs font-bold text-white">JM</span>
+            </span>
+            <div>
+              <span className="block font-display text-sm font-bold leading-tight">Joseph &amp; Mike&apos;s</span>
+              <span className="text-[10px] uppercase tracking-[0.2em] text-primary">Control panel</span>
+            </div>
           </div>
-        </div>
-        <div className="flex-1 overflow-y-auto p-4">
-          <NavList />
-        </div>
-        <SidebarFooter session={session} />
-      </aside>
+          <div className="flex-1 overflow-y-auto px-3 pb-4 pt-2">
+            <NavList />
+          </div>
+          <SidebarFooter session={session} />
+        </aside>
 
-      {/* Mobile drawer */}
-      {mobileOpen && (
-        <>
-          <div
-            onClick={() => setMobileOpen(false)}
-            className="fixed inset-0 z-40 bg-black/60 animate-in fade-in duration-150 lg:hidden"
-          />
-          <aside className="fixed inset-y-0 left-0 z-50 flex w-72 flex-col border-r border-border bg-card shadow-card-hover animate-in slide-in-from-left duration-300 lg:hidden">
-            <div className="flex h-16 items-center justify-between border-b border-border px-5">
-              <span className="font-display text-sm font-bold">Joseph &amp; Mike&apos;s</span>
-              <button onClick={() => setMobileOpen(false)} aria-label="Close menu">
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-            <div className="flex-1 overflow-y-auto p-3">
-              <NavList />
-            </div>
-            <SidebarFooter session={session} />
-          </aside>
-        </>
-      )}
-
-      {/* Main */}
-      <div className="flex min-h-screen flex-col bg-background lg:min-h-[calc(100vh-2rem)] lg:overflow-hidden lg:rounded-[1.5rem] lg:border lg:border-border lg:bg-background/90 lg:shadow-[0_26px_90px_-58px_rgb(0_0_0/0.92)] lg:backdrop-blur-xl">
-        <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border bg-background/90 px-4 backdrop-blur-xl lg:h-20 lg:px-8">
-          <button className="grid h-10 w-10 place-items-center rounded-md border border-border lg:hidden" onClick={() => setMobileOpen(true)} aria-label="Open menu">
-            <Menu className="h-5 w-5" />
-          </button>
-          <p className="font-display text-base font-semibold lg:text-lg">{currentLabel}</p>
-          <div className="flex items-center gap-3">
-            {notifications && <NotificationBell {...notifications} canBookings={isOwner || grantSet.has("manage_bookings")} canMessages={isOwner || grantSet.has("manage_messages")} />}
-            <Link href="/" target="_blank" className="hidden items-center gap-1.5 rounded-xl border border-border bg-card/70 px-3 py-2 text-sm text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground sm:flex">
-              <ExternalLink className="h-4 w-4" /> View site
-            </Link>
-            <div className="hidden text-right sm:block">
-              <p className="text-sm font-medium leading-tight">{session.name}</p>
-              <p className="text-xs capitalize text-muted-foreground">{session.role.toLowerCase()}</p>
-            </div>
-            <div className="grid h-9 w-9 place-items-center rounded-full bg-primary/15 font-display text-sm font-bold text-primary">
-              {session.name.charAt(0)}
-            </div>
-          </div>
-        </header>
-        {session.isDevBypass && (
-          <div className="border-b border-amber-500/30 bg-amber-500/10 px-4 py-2 text-sm text-amber-100 lg:px-8">
-            Development admin bypass is active. Turn off ALLOW_DEV_ADMIN_BYPASS before production.
-          </div>
+        {/* Mobile drawer */}
+        {mobileOpen && (
+          <>
+            <div
+              onClick={() => setMobileOpen(false)}
+              className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm animate-in fade-in duration-150 lg:hidden"
+            />
+            <aside className="fixed inset-y-0 left-0 z-50 flex w-72 flex-col border-r border-border bg-card animate-in slide-in-from-left duration-300 lg:hidden">
+              <div className="flex h-16 items-center justify-between border-b border-border px-5">
+                <span className="font-display text-sm font-bold">Joseph &amp; Mike&apos;s</span>
+                <button onClick={() => setMobileOpen(false)} aria-label="Close menu">
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+              <div className="flex-1 overflow-y-auto p-3">
+                <NavList />
+              </div>
+              <SidebarFooter session={session} />
+            </aside>
+          </>
         )}
-        <main
-          key={pathname}
-          className="flex-1 overflow-x-hidden px-4 py-6 animate-in fade-in slide-in-from-bottom-1 duration-200 lg:overflow-y-auto lg:px-8 lg:py-8"
-        >
-          {children}
-        </main>
-      </div>
+
+        {/* Main */}
+        <div className="flex min-h-screen flex-col">
+          <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border bg-background/85 px-4 backdrop-blur-xl lg:h-20 lg:px-10">
+            <div className="flex items-center gap-3">
+              <button
+                className="grid h-10 w-10 place-items-center rounded-lg border border-border lg:hidden"
+                onClick={() => setMobileOpen(true)}
+                aria-label="Open menu"
+              >
+                <Menu className="h-5 w-5" />
+              </button>
+              <p className="font-display text-base font-semibold lg:text-lg">{currentLabel}</p>
+            </div>
+            <div className="flex items-center gap-2.5">
+              {notifications && (
+                <NotificationBell
+                  {...notifications}
+                  canBookings={isOwner || grantSet.has("manage_bookings")}
+                  canMessages={isOwner || grantSet.has("manage_messages")}
+                />
+              )}
+              <ThemeToggle className="hidden sm:inline-flex" />
+              <Link
+                href="/"
+                target="_blank"
+                className="hidden items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-sm text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground md:flex"
+              >
+                <ExternalLink className="h-4 w-4" /> View site
+              </Link>
+              <div className="hidden text-right sm:block">
+                <p className="text-sm font-medium leading-tight">{session.name}</p>
+                <p className="text-xs capitalize text-muted-foreground">{session.role.toLowerCase()}</p>
+              </div>
+              <div className="grid h-9 w-9 place-items-center rounded-full bg-primary/15 font-display text-sm font-bold text-primary">
+                {session.name.charAt(0)}
+              </div>
+            </div>
+          </header>
+          {session.isDevBypass && (
+            <div className="border-b border-primary/30 bg-primary/10 px-4 py-2 text-sm text-foreground lg:px-10">
+              Development admin bypass is active. Turn off ALLOW_DEV_ADMIN_BYPASS before production.
+            </div>
+          )}
+          <main
+            key={pathname}
+            className="mx-auto w-full max-w-6xl flex-1 overflow-x-hidden px-4 py-8 animate-in fade-in slide-in-from-bottom-1 duration-200 lg:px-10 lg:py-10"
+          >
+            {children}
+          </main>
+        </div>
       </div>
     </div>
   );
@@ -233,10 +257,10 @@ function NotificationBell({
     <div className="relative">
       <button
         onClick={() => setOpen((o) => !o)}
-        className="relative grid h-9 w-9 place-items-center rounded-full border border-border bg-card/70 text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
+        className="relative grid h-9 w-9 place-items-center rounded-full border border-border text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
         aria-label="Notifications"
       >
-        <Bell className="h-[18px] w-[18px]" />
+        <Bell className="h-[17px] w-[17px]" strokeWidth={1.8} />
         {count > 0 && (
           <span className="absolute -right-0.5 -top-0.5 grid h-4 min-w-4 place-items-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground">
             {count > 9 ? "9+" : count}
@@ -246,7 +270,7 @@ function NotificationBell({
       {open && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} aria-hidden />
-          <div className="absolute right-0 top-11 z-50 w-72 rounded-xl border border-border bg-card p-2 shadow-2xl animate-in fade-in slide-in-from-top-1 duration-150">
+          <div className="absolute right-0 top-11 z-50 w-72 rounded-xl border border-border bg-card p-2 shadow-lg animate-in fade-in slide-in-from-top-1 duration-150">
             {items.length === 0 ? (
               <p className="p-3 text-sm text-muted-foreground">You&apos;re all caught up.</p>
             ) : (
@@ -266,14 +290,15 @@ function NotificationBell({
 
 function SidebarFooter({ session }: { session: { name: string; email: string } }) {
   return (
-    <div className="border-t border-border p-4">
-      <div className="mb-3 rounded-2xl border border-border bg-background/50 p-3">
-        <p className="truncate text-sm font-medium">{session.name}</p>
-        <p className="truncate text-xs text-muted-foreground">{session.email}</p>
-      </div>
-      <form action={logoutAction}>
-        <button type="submit" className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground">
-          <LogOut className="h-[18px] w-[18px]" /> Sign out
+    <div className="border-t border-border px-4 py-4">
+      <p className="truncate px-3 text-sm font-medium">{session.name}</p>
+      <p className="truncate px-3 text-xs text-muted-foreground">{session.email}</p>
+      <form action={logoutAction} className="mt-2">
+        <button
+          type="submit"
+          className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary/60 hover:text-foreground"
+        >
+          <LogOut className="h-[17px] w-[17px]" strokeWidth={1.8} /> Sign out
         </button>
       </form>
     </div>

@@ -226,14 +226,14 @@ export function LoginForm({
       </form>
 
       {devBypassEnabled && (
-        <form action={devBypassLoginAction} className="rounded-lg border border-amber-500/25 bg-amber-500/10 p-3">
+        <form action={devBypassLoginAction} className="rounded-lg border border-amber-500/40 bg-amber-500/10 p-3">
           <input type="hidden" name="next" value={next ?? "/admin"} />
-          <p className="mb-3 text-xs leading-relaxed text-amber-100/90">
+          <p className="mb-3 text-xs leading-relaxed text-amber-800/90 dark:text-amber-100/90">
             Development bypass is active for local testing only. Turn off <code>ALLOW_DEV_ADMIN_BYPASS</code> before production.
           </p>
           <button
             type="submit"
-            className="flex h-10 w-full items-center justify-center gap-2 rounded-lg border border-amber-400/30 bg-amber-400/10 text-sm font-semibold text-amber-100 transition-all duration-300 hover:border-amber-300/50 hover:bg-amber-400/20"
+            className="flex h-10 w-full items-center justify-center gap-2 rounded-lg border border-amber-500/40 bg-amber-500/10 text-sm font-semibold text-amber-700 transition-all duration-300 hover:bg-amber-500/20 dark:text-amber-100"
           >
             <FlaskConical className="h-4 w-4" />
             Enter as dev admin

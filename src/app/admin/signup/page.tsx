@@ -37,13 +37,13 @@ export default async function AdminSignupPage() {
                 </p>
               </div>
               <SignupForm />
-              <p className="mt-4 rounded-md border border-amber-500/25 bg-amber-500/10 p-2.5 text-center text-xs text-amber-100/90">
+              <p className="mt-4 rounded-md border border-amber-500/40 bg-amber-500/10 p-2.5 text-center text-xs text-amber-800/90 dark:text-amber-100/90">
                 Customers don&apos;t need an account to book — this page is for shop staff only and is gated by the owner.
               </p>
             </>
           ) : (
             <div className="text-center">
-              <ShieldAlert className="mx-auto mb-3 h-10 w-10 text-amber-400" />
+              <ShieldAlert className="mx-auto mb-3 h-10 w-10 text-amber-600 dark:text-amber-400" />
               <h1 className="font-display text-xl font-bold">Staff signup is currently disabled</h1>
               <p className="mt-2 text-sm text-muted-foreground">
                 Ask the owner to create your account. For setup, an owner can enable signup with{" "}

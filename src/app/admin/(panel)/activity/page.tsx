@@ -13,7 +13,7 @@ export const dynamic = "force-dynamic";
 const PAGE_SIZE = 30;
 
 const ACTION_STYLE: Record<string, string> = {
-  create: "bg-emerald-500/15 text-emerald-300",
+  create: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300",
   update: "bg-primary/15 text-primary",
   delete: "bg-destructive/15 text-destructive",
 };
