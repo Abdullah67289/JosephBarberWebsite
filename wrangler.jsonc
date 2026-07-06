@@ -15,16 +15,14 @@
       "binding": "DB",
       "database_name": "joseph-mikes-barbershop",
       // Replace with the real id from `wrangler d1 create joseph-mikes-barbershop`
-      "database_id": "REPLACE_WITH_D1_DATABASE_ID",
+      "database_id": "db6b0e46-b5b3-4472-8482-1b41ee1c8e7b",
       "migrations_dir": "migrations"
     }
   ],
-  "r2_buckets": [
-    {
-      "binding": "UPLOADS",
-      "bucket_name": "joseph-mikes-barbershop-uploads"
-    }
-  ],
+  // R2 skipped for now (requires a card on file even for the free tier).
+  // Admin image uploads (Gallery/Products) fall back gracefully without it —
+  // everything else works. Add an "r2_buckets" block back here later to
+  // enable uploads, once a bucket exists (see DEPLOY.md).
   "vars": {
     // Non-secret runtime vars. Secrets (AUTH_SECRET, STRIPE_*, RESEND_API_KEY,
     // TWILIO_*) are set with `wrangler secret put <NAME>` — never here.
