@@ -13,7 +13,7 @@ export const metadata: Metadata = {
   description: "Haircuts, fades, beard trims, hot-towel shaves and more — transparent pricing at Joseph & Mike's.",
 };
 
-export const revalidate = 300;
+export const dynamic = "force-dynamic";
 
 export default async function ServicesPage() {
   const [page, categories] = await Promise.all([

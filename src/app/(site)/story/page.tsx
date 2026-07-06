@@ -20,7 +20,7 @@ export const metadata: Metadata = {
   description: "Three generations of barbering in downtown Milton — established 1966 by Mike Boughton.",
 };
 
-export const revalidate = 300;
+export const dynamic = "force-dynamic";
 
 export default async function StoryPage() {
   const [settings, page, timeline, staff, services, testimonials, gallery] = await Promise.all([

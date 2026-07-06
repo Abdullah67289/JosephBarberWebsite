@@ -11,7 +11,7 @@ export const metadata: Metadata = {
   description: "Premium grooming products hand-picked by our barbers — pomades, beard care, tools and more.",
 };
 
-export const revalidate = 300;
+export const dynamic = "force-dynamic";
 
 export default async function ShopPage() {
   const [page, products, categories] = await Promise.all([

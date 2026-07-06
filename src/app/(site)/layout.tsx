@@ -5,7 +5,10 @@ import { PageEdgeBlur } from "@/components/site/page-edge-blur";
 import { getSettings } from "@/lib/settings";
 import { getNavigationLinks } from "@/lib/queries";
 
-export const revalidate = 300;
+// D1 only exists inside a live Worker request, never during the Cloudflare
+// build step — ISR (revalidate) would try to prerender with real DB queries
+// at build time and fail. Render per-request instead.
+export const dynamic = "force-dynamic";
 
 const FALLBACK_LINKS = [
   { href: "/", label: "Home" },

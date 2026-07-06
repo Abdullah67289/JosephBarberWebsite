@@ -12,7 +12,7 @@ export const metadata: Metadata = {
   description: "A look at the cuts, fades and shaves coming out of Joseph & Mike's chairs.",
 };
 
-export const revalidate = 300;
+export const dynamic = "force-dynamic";
 
 export default async function GalleryPage() {
   const [page, images] = await Promise.all([

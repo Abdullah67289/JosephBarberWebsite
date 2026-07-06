@@ -10,7 +10,7 @@ export const metadata: Metadata = {
   description: "Booking questions, policies, cancellation details, and shop guidance.",
 };
 
-export const revalidate = 300;
+export const dynamic = "force-dynamic";
 
 export default async function FaqPage() {
   const [page, faqs, policies] = await Promise.all([
