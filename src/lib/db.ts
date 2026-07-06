@@ -1,5 +1,7 @@
+import path from "node:path";
 import { PrismaClient } from "@prisma/client";
 import { PrismaD1 } from "@prisma/adapter-d1";
+import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
 import { getCloudflareContext } from "@opennextjs/cloudflare";
 
 /**
@@ -27,9 +29,23 @@ export function usingD1(): boolean {
   return onD1;
 }
 
+/**
+ * Prisma 7's engine-free client has no implicit url-based connection — every
+ * runtime must pass an explicit adapter. Resolve the local SQLite file the
+ * same way the old `url = env("DATABASE_URL")` schema line did: relative
+ * paths resolve against the prisma/ directory.
+ */
+function resolveSqliteFile(url: string): string {
+  const stripped = url.replace(/^file:/, "");
+  if (stripped === ":memory:" || path.isAbsolute(stripped)) return stripped;
+  return path.join(process.cwd(), "prisma", stripped);
+}
+
 function nodeClient(): PrismaClient {
   if (!globalForPrisma.prisma) {
+    const file = resolveSqliteFile(process.env.DATABASE_URL || "file:./dev.db");
     globalForPrisma.prisma = new PrismaClient({
+      adapter: new PrismaBetterSqlite3({ url: file }),
       log: process.env.NODE_ENV === "development" ? ["error", "warn"] : ["error"],
     });
   }

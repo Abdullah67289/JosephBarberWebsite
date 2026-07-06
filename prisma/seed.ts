@@ -5,10 +5,8 @@
  * safe to run again without clobbering data you've changed in the admin.
  * Use `npm run db:reset` to wipe and reseed from scratch.
  */
-import { PrismaClient } from "@prisma/client";
+import { db } from "../src/lib/db";
 import { hashPassword } from "../src/lib/password";
-
-const db = new PrismaClient();
 
 // The shop owner's login email. Deliberately hardcoded (no env override): the
 // owner account is the root of the permission system and must not drift.

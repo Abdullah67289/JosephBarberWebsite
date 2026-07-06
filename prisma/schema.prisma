@@ -14,15 +14,21 @@
 // -----------------------------------------------------------------------------
 
 generator client {
-  provider        = "prisma-client-js"
-  // driverAdapters lets the same client run against Cloudflare D1 (via
-  // @prisma/adapter-d1) in production and file SQLite locally.
-  previewFeatures = ["driverAdapters"]
+  provider = "prisma-client-js"
+  // engineType "client" (queryCompiler) produces a fully JS/WASM query engine
+  // with no native binary and no eval/new Function — required for Cloudflare
+  // Workers, which hard-blocks runtime code generation from strings. Driver
+  // adapters (PrismaD1 / PrismaBetterSqlite3, wired in src/lib/db.ts) are the
+  // only supported connection method with this engine.
+  engineType = "client"
 }
 
+// Prisma 7: connection URLs no longer live here. The CLI (db push/migrate)
+// reads its connection from prisma.config.ts; the app always instantiates
+// PrismaClient with an explicit driver adapter (src/lib/db.ts) — never an
+// implicit url-based connection.
 datasource db {
   provider = "sqlite" // file SQLite locally; Cloudflare D1 in production
-  url      = env("DATABASE_URL")
 }
 
 // ---------------------------------------------------------------- Auth & staff
