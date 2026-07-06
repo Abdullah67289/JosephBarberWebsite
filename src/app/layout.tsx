@@ -20,6 +20,13 @@ const playfair = Playfair_Display({
   display: "swap",
 });
 
+// The root layout queries the database (getSettings) for every single page,
+// including auto-generated routes like /_not-found. D1 only exists inside a
+// live Worker request, never during the Cloudflare build step, so nothing in
+// this app can be prerendered at build time — force dynamic rendering here,
+// at the root, so it's guaranteed to apply everywhere.
+export const dynamic = "force-dynamic";
+
 export async function generateMetadata(): Promise<Metadata> {
   const s = await getSettings();
   const title = s.seoTitle || `${s.businessName} - ${s.tagline}`;
