@@ -10,6 +10,21 @@ const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
   outputFileTracingRoot: path.resolve(process.cwd()),
+  // Keep these out of webpack's bundle so OpenNext's esbuild pass (which runs
+  // with the "workerd" export condition) resolves them fresh for the Worker:
+  //  - @prisma/client: webpack's "node" resolution bakes in the base64-embedded
+  //    WASM query compiler (index.js). Left external, esbuild picks the workerd
+  //    condition -> edge.js -> a RAW `.wasm` module import, which gzips ~500 KiB
+  //    smaller and drops the base64 33% inflation (critical for the 3 MiB
+  //    free-plan Worker size limit).
+  //  - better-sqlite3 / its adapter: LOCAL-dev only (native .node binary must
+  //    never reach the Worker). db.ts loads them via a runtime require.
+  serverExternalPackages: [
+    "@prisma/client",
+    ".prisma/client",
+    "better-sqlite3",
+    "@prisma/adapter-better-sqlite3",
+  ],
   images: {
     // Cloudflare Workers has no built-in Next image optimizer; serve images
     // as-is (the gallery assets are already web-sized).

@@ -1,7 +1,13 @@
 import path from "node:path";
-import { PrismaClient } from "@prisma/client";
+import { createRequire } from "node:module";
+// Worker/D1 path uses the EDGE client, whose query-compiler WASM is imported as
+// a raw `.wasm` module (via Prisma's workerd export condition). That gzips
+// ~500 KiB smaller than the base64-embedded WASM in the default `@prisma/client`
+// build — the difference between fitting and blowing the 3 MiB free-plan Worker
+// size limit. The WASM is loaded lazily (first query), so importing this in
+// Node/dev is harmless; the Node path below uses the base64 build instead.
+import { PrismaClient } from "@prisma/client/edge";
 import { PrismaD1 } from "@prisma/adapter-d1";
-import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
 import { getCloudflareContext } from "@opennextjs/cloudflare";
 
 /**
@@ -41,15 +47,33 @@ function resolveSqliteFile(url: string): string {
   return path.join(process.cwd(), "prisma", stripped);
 }
 
+/**
+ * require() a Node-only package at runtime. The specifier reaches the real
+ * require as a *variable*, so neither webpack nor esbuild can trace the package
+ * into the Worker bundle (a literal argument would be statically resolved and
+ * re-bundle the base64 WASM build + the native better-sqlite3 binary). These
+ * calls only ever run under Node — dev, the seed script, Node hosts.
+ */
+function nodeOnlyRequire<T = unknown>(spec: string): T {
+  const req = createRequire(import.meta.url);
+  return req(spec) as T;
+}
+
 function nodeClient(): PrismaClient {
-  if (!globalForPrisma.prisma) {
-    const file = resolveSqliteFile(process.env.DATABASE_URL || "file:./dev.db");
-    globalForPrisma.prisma = new PrismaClient({
-      adapter: new PrismaBetterSqlite3({ url: file }),
-      log: process.env.NODE_ENV === "development" ? ["error", "warn"] : ["error"],
-    });
-  }
-  return globalForPrisma.prisma;
+  if (globalForPrisma.prisma) return globalForPrisma.prisma;
+  const file = resolveSqliteFile(process.env.DATABASE_URL || "file:./dev.db");
+  const { PrismaClient: NodePrismaClient } = nodeOnlyRequire<{
+    PrismaClient: new (opts: unknown) => PrismaClient;
+  }>("@prisma/client");
+  const { PrismaBetterSqlite3 } = nodeOnlyRequire<{
+    PrismaBetterSqlite3: new (opts: { url: string }) => unknown;
+  }>("@prisma/adapter-better-sqlite3");
+  const client = new NodePrismaClient({
+    adapter: new PrismaBetterSqlite3({ url: file }),
+    log: process.env.NODE_ENV === "development" ? ["error", "warn"] : ["error"],
+  });
+  globalForPrisma.prisma = client;
+  return client;
 }
 
 function resolveClient(): PrismaClient {

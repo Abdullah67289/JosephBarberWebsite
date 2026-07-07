@@ -56,15 +56,28 @@ export async function sendEmail(opts: {
     return;
   }
   try {
-    const { Resend } = await import("resend");
-    const resend = new Resend(env.email.apiKey);
-    await resend.emails.send({
-      from: env.email.from,
-      to: opts.to,
-      subject: opts.subject,
-      html: opts.html,
-      text: opts.text,
+    // Plain fetch to Resend's REST API — the resend SDK pulls in
+    // @react-email/render (+ prettier, ~260 KB) which we don't need since every
+    // template here is already a raw HTML string, and it bloats the Worker
+    // bundle past the 3 MiB limit. This is the only email call the app makes.
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${env.email.apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from: env.email.from,
+        to: opts.to,
+        subject: opts.subject,
+        html: opts.html,
+        text: opts.text,
+      }),
     });
+    if (!res.ok) {
+      const detail = await res.text().catch(() => "");
+      throw new Error(`Resend ${res.status}: ${detail.slice(0, 300)}`);
+    }
     await record({ channel: "email", to: opts.to, template: opts.template, subject: opts.subject, body: opts.text, status: "sent", relatedType: opts.relatedType, relatedId: opts.relatedId });
   } catch (err) {
     await record({ channel: "email", to: opts.to, template: opts.template, subject: opts.subject, body: opts.text, status: "failed", error: String(err), relatedType: opts.relatedType, relatedId: opts.relatedId });
