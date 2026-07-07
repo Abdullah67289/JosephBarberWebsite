@@ -2,7 +2,7 @@
   // Cloudflare Workers config — deployed via `npm run deploy` (OpenNext).
   // Docs: https://opennext.js.org/cloudflare
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "joseph-mikes-barbershop",
+  "name": "joseph-mikes-barbershop-app",
   "main": ".open-next/worker.js",
   "compatibility_date": "2026-04-01",
   "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
